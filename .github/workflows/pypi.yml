@@ -20,6 +20,7 @@ jobs:
       - name: Web tools
         run: |
           npm ci
+          npm run build
       - name: Python
         uses: actions/setup-python@v1
         with:
