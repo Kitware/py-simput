@@ -3,7 +3,7 @@
 
 # Python
 __pycache__
-py-env
+py-env*
 py-lib
 *.egg-info
 dist
