@@ -1,0 +1,145 @@
+# =========================================================
+# Algorithms
+# =========================================================
+
+Wavelet:
+  _tags:
+    - Algorithm
+  Extent:
+    type: int32
+    size: 6
+
+# ---------------------------------------------------------
+
+Cone:
+  _tags:
+    - Algorithm
+  Height:
+    type: float64
+    size: 1
+    constraints:
+      - type: Min
+        value: 0
+        exclude: true
+  Radius:
+    type: float64
+    size: 1
+    constraints:
+      - type: Min
+        value: 0
+        exclude: true
+  Resolution:
+    type: uint16
+    size: 1
+    constraints:
+      - type: Min
+        value: 3
+
+# =========================================================
+# ImplicitFunctions
+# =========================================================
+
+ImplicitPlane:
+  _tags:
+    - ImplicitFunction
+  Origin:
+    type: float64
+    size: 3
+  Normal:
+    type: float64
+    size: 3
+
+# ---------------------------------------------------------
+
+ImplicitBox:
+  _tags:
+    - ImplicitFunction
+  Bounds:
+    type: float64
+    size: 6
+
+# ---------------------------------------------------------
+
+ImplicitSphere:
+  _tags:
+    - ImplicitFunction
+  Center:
+    type: float64
+    size: 3
+  Radius:
+    type: float64
+    size: 1
+
+# ---------------------------------------------------------
+
+ImplicitPlaceHolder:
+  _tags:
+    - ImplicitFunction
+
+# =========================================================
+# Clip
+# =========================================================
+
+Clip:
+  _tags:
+    - Algorithm
+  Input:
+    type: object
+    size: 1
+    constraints:
+      - type: HasTags
+        values:
+          - Algorithm
+  ClipFunction:
+    type: object
+    size: 1
+    initial:
+      type: ObjectBuilder
+      initial: Plane
+      values:
+        - name: Plane
+          type: ImplicitPlane
+        - name: Box
+          type: ImplicitBox
+        - name: Sphere
+          type: ImplicitSphere
+        - name: Scalar
+          type: ImplicitPlaceHolder
+    constraints:
+      - type: ObjectBuilder
+        anchor: ClipFunction
+      - type: IsEqual
+        value: Scalar
+        available: ObjectBuilder
+        name: Scalars
+  InsideOut:
+    size: 1
+    type: uint8
+    initial: 0
+    constraints:
+      - type: Boolean
+  Scalars:
+    size: 1
+    type: string
+    initial:
+      type: FieldSelector
+    constraints:
+      - type: FieldSelector
+        property: Input
+        port: 0
+        location: Points
+        size: 1
+        isA:
+          - vtkStringArray
+          - vtkDataArray
+  Value:
+    size: 1
+    type: float64
+    initial: 0
+    #   type: MeanRange
+    #   property: Scalars
+    # constraints:
+    #   - type: Range
+    #     property: Scalars
+
+# ---------------------------------------------------------

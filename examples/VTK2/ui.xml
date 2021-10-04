@@ -1,0 +1,32 @@
+<layouts>
+    <ui id="vtkClipDataSet">
+        <input name="ClipFunction" />
+        <object name="ClipFunction" />
+        <input name="Scalars" useRangeHelp="" />
+        <input name="Value" />
+        <row>
+            <input name="InsideOut" />
+            <input name="UseValueAsOffset" />
+        </row>
+    </ui>
+    <ui id="vtkContourFilter">
+        <input name="ContourBy" />
+        <input name="Contours" allowRefresh="" />
+        <row>
+            <input name="ComputeScalars" />
+            <input name="ComputeGradients" />
+            <input name="ComputeNormals" />
+            <input name="UseScalarTree" />
+            <input name="GenerateTriangles" />
+        </row>
+    </ui>
+    <!-- <ui id="Representation">
+        <input name="ColorBy" />
+        <input name="NumericalArrays" />
+        <input name="PointsScalars" />
+        <input name="PointsVectors" />
+        <input name="ColorRange" />
+        <input name="Opacity" />
+        <input name="Visibility" />
+    </ui> -->
+</layouts>

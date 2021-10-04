@@ -1,0 +1,294 @@
+# -----------------------------------------------------------------------------
+# Mixins
+# > They messup auto-generated UI
+# -----------------------------------------------------------------------------
+
+_has_data_representation:
+  Representation:
+    _ui: object
+    size: 1
+    type: object
+    initial:
+      type: ObjectBuilder
+      initial: Default
+      values:
+        - name: Default
+          type: Representation
+      bind: Input
+
+# -----------------------------------------------------------------------------
+# Implicit Functions
+# -----------------------------------------------------------------------------
+
+vtkNoneImplicit:
+  _tags:
+    - ImplicitFunction
+  Filter:
+    _ui: skip
+    type: object
+    size: 1
+
+vtkPlane:
+  _tags:
+    - ImplicitFunction
+  Filter:
+    _ui: skip
+    type: object
+    size: 1
+  Normal:
+    type: float32
+    size: 3
+  Origin:
+    type: float32
+    size: 3
+    initial:
+      type: BoundsCenter
+      object: Filter
+      property: Input
+
+
+# -----------------------------------------------------------------------------
+# Sources
+# -----------------------------------------------------------------------------
+
+Diskout:
+  _tags:
+    - Source
+  _mixins:
+    - _has_data_representation
+
+
+# -----------------------------------------------------------------------------
+
+Cone:
+  _tags:
+    - Source
+  _mixins:
+    - _has_data_representation
+  Height:
+    type: float64
+    size: 1
+  Radius:
+    type: float64
+    size: 1
+  Resolution:
+    type: uint16
+    size: 1
+  Center:
+    type: float64
+    size: 3
+  Direction:
+    type: float32
+    size: 3
+  Capping:
+    type: bool
+    size: 1
+
+
+# -----------------------------------------------------------------------------
+# Filters
+# -----------------------------------------------------------------------------
+
+vtkContourFilter:
+  _tags:
+    - Filter
+  _mixins:
+    - _has_data_representation
+  Input:
+    _ui: skip
+    _set:
+      method: SetInputConnection
+      filter: to_output_port
+      kwargs:
+        connection: 0
+    type: object
+    size: 1
+
+  ContourBy:
+    _set:
+      method: SetInputArrayToProcess
+      filter: to_input_array_to_process
+      kwargs:
+        idx: 0
+        connection: 0
+    type: string
+    size: 1
+    initial:
+      type: FieldSelector
+    constraints:
+      - name: List
+        type: FieldSelector
+        property: Input
+        location: Point
+        size: 1
+        isA:
+          - vtkDataArray
+  Contours:
+    type: float64
+    size: 1
+    initial:
+      type: RangeMean
+      property: ContourBy
+      constraint: List
+      refresh: auto
+    _set:
+      - method: SetNumberOfContours
+        filter: to_size
+      - method: SetValue
+        filter: map_index_value
+        kwargs:
+          start_index: 0
+    constraints:
+      - type: UI
+        properties:
+          layout: vertical
+  ComputeScalars:
+    type: bool
+    size: 1
+  ComputeGradients:
+    type: bool
+    size: 1
+  ComputeNormals:
+    type: bool
+    size: 1
+  UseScalarTree:
+    type: bool
+    size: 1
+  GenerateTriangles:
+    type: bool
+    size: 1
+
+
+# -----------------------------------------------------------------------------
+
+vtkClipDataSet:
+  _tags:
+    - Filter
+  _mixins:
+    - _has_data_representation
+  Input:
+    _ui: skip
+    _set:
+      method: SetInputConnection
+      filter: to_output_port
+      kwargs:
+        connection: 0
+    type: object
+    size: 1
+  ClipFunction:
+    type: object
+    size: 1
+    initial:
+      type: ObjectBuilder
+      initial: Default
+      bind: Filter
+      values:
+        - name: Default
+          type: vtkPlane
+        - name: Scalars
+          type: vtkNoneImplicit
+    constraints:
+      - type: ObjectBuilder
+        anchor: ClipFunction
+  Scalars:
+    _set:
+      method: SetInputArrayToProcess
+      filter: to_input_array_to_process
+      kwargs:
+        idx: 0
+        connection: 0
+    type: string
+    size: 1
+    initial:
+      type: FieldSelector
+    constraints:
+      - name: List
+        type: FieldSelector
+        property: Input
+        location: Point
+        size: 1
+        isA:
+          - vtkDataArray
+  Value:
+    type: float64
+    size: 1
+  InsideOut:
+    type: bool
+    size: 1
+  UseValueAsOffset:
+    type: bool
+    size: 1
+
+
+# -----------------------------------------------------------------------------
+# Representations
+# -----------------------------------------------------------------------------
+
+Representation:
+  _tags:
+    - Representation
+  Input:
+    _ui: skip
+    type: object
+    size: 1
+  ColorBy:
+    type: string
+    size: 1
+    constraints:
+      - name: List
+        type: FieldSelector
+        property: Input
+
+  # NumericalArrays:
+  #   type: string
+  #   size: 1
+  #   initial:
+  #     type: FieldSelector
+  #   constraints:
+  #     - type: FieldSelector
+  #       property: Input
+  #       name: List
+  #       isA:
+  #         - vtkDataArray
+
+  # PointsScalars:
+  #   type: string
+  #   size: 1
+  #   constraints:
+  #     - type: FieldSelector
+  #       property: Input
+  #       location: Point
+  #       size: 1
+  #       name: List
+  # PointsVectors:
+  #   type: string
+  #   size: 1
+  #   constraints:
+  #     - type: FieldSelector
+  #       location: Point
+  #       size: 3
+  #       property: Input
+  #       name: List
+  Opacity:
+    size: 1
+    type: float32
+    constraints:
+      - type: Range
+        value_range: [0, 1]
+  Visibility:
+    size: 1
+    type: uint8
+    constraints:
+      - type: Boolean
+
+  # ColorRange:
+  #   size: 2
+  #   type: float64
+  #   initial:
+  #     - type: Range
+  #       arrayProperty: NumericalArrays
+  #       arrayConstraint: List
+  #   constraints:
+  #     - type: Range
+  #       arrayProperty: NumericalArrays
+  #       arrayConstraint: List

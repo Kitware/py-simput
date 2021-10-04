@@ -1,0 +1,184 @@
+<Simput :wsClient="wsClient">
+  <v-app>
+    <v-navigation-drawer app clipped stateless v-model="showMenu" width="400">
+      <v-tabs v-model="drawerMode" center-active dense>
+        <v-tab><v-icon>mdi-format-list-bulleted-type</v-icon></v-tab>
+        <v-tab><v-icon>mdi-plus</v-icon></v-tab>
+        <v-tab><v-icon>mdi-pencil-outline</v-icon></v-tab>
+      </v-tabs>
+      <v-tabs-items v-model="drawerMode">
+        <v-tab-item>
+          <v-list dense>
+            <v-list-item-group v-model="activeId" color="primary">
+              <v-list-item v-for="(id, i) in sourceIds" :key="i" :value="id">
+                <v-list-item-content>
+                  <v-list-item-title>
+                    <SimputItem :itemId="id" no-ui v-slot="{ data }">
+                      {{ data.name }}
+                    </SimputItem>
+                  </v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list-item-group>
+          </v-list>
+        </v-tab-item>
+        <v-tab-item>
+          <v-card>
+            <v-card-text>
+              <v-row>
+                <v-col>
+                  <v-select
+                    :key="tts"
+                    v-model="objType"
+                    :items="objTypes"
+                    dense
+                    hide-details
+                    @change="objName = $event"
+                  />
+                </v-col>
+                <v-col>
+                  <v-text-field
+                    v-model="objName"
+                    clearable
+                    dense
+                    hide-details
+                  />
+                </v-col>
+              </v-row>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer />
+              <v-btn @click="trigger('create', [objName, objType])">
+                Create
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-tab-item>
+        <v-tab-item>
+          <SimputItem :itemId="activeId" />
+        </v-tab-item>
+      </v-tabs-items>
+    </v-navigation-drawer>
+    <v-app-bar app dense clipped-left>
+      <v-btn icon @click="showMenu = !showMenu" class="mr-2">
+        <v-icon>mdi-virus-outline</v-icon>
+      </v-btn>
+      <div class="title">VTK</div>
+      <v-spacer />
+      <v-divider vertical class="mx-1" />
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs"
+            v-on="on"
+            icon
+            @click="document.getElementById('importFile').click();"
+          >
+            <v-icon>mdi-database-import-outline</v-icon>
+            <input
+              id="importFile"
+              type="file"
+              style="display: none"
+              @change="importFile=$event.target.files[0]"
+            />
+          </v-btn>
+        </template>
+        <span>Import State</span>
+      </v-tooltip>
+
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-bind="attrs" v-on="on" icon @click="trigger('export')">
+            <v-icon>mdi-database-export-outline</v-icon>
+            <py-state-update
+              :value="exportContent"
+              @change="exportContent && download('VTKState.json', exportContent)"
+            />
+          </v-btn>
+        </template>
+        <span>Export State</span>
+      </v-tooltip>
+
+      <v-divider vertical class="mx-1" />
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-switch
+            v-bind="attrs"
+            v-on="on"
+            class="mx-2"
+            v-model="simputAutoApply"
+            dense
+            hide-details
+            label="Apply "
+          />
+        </template>
+        <span>Auto Apply changes</span>
+      </v-tooltip>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs"
+            v-on="on"
+            class="mx-2"
+            small
+            outlined
+            icon
+            :disabled="!simputChangeSet"
+            @click="trigger('simputApply')"
+          >
+            <v-badge
+              :content="simputChangeSet"
+              offset-x="8"
+              offset-y="8"
+              :value="simputChangeSet"
+            >
+              <v-icon>mdi-database-import</v-icon>
+            </v-badge>
+          </v-btn>
+        </template>
+        <span>Apply changes</span>
+      </v-tooltip>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs"
+            v-on="on"
+            class="mx-2"
+            small
+            outlined
+            icon
+            :disabled="!simputChangeSet"
+            @click="trigger('simputReset')"
+          >
+            <v-icon>mdi-undo-variant</v-icon>
+          </v-btn>
+        </template>
+        <span>Reset changes</span>
+      </v-tooltip>
+      <v-divider vertical />
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs"
+            v-on="on"
+            icon
+            @click="$refs.view.resetCamera()"
+          >
+            <v-icon>mdi-crop-free</v-icon>
+          </v-btn>
+        </template>
+        <span>Reset Camera</span>
+      </v-tooltip>
+    </v-app-bar>
+    <v-main>
+      <v-container fluid fill-height class="ma-0 pa-0">
+        <vtk-sync-view
+          ref="view"
+          :wsClient="wsClient"
+          :viewState="view"
+          @ready="trigger('viewReady')"
+        />
+      </v-container>
+    </v-main>
+  </v-app>
+</Simput>

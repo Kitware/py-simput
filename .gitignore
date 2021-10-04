@@ -1,0 +1,33 @@
+# Generic
+.DS_Store
+
+# Python
+__pycache__
+py-env
+py-lib
+*.egg-info
+dist
+
+# JavaScript
+node_modules
+
+
+
+# local env files
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

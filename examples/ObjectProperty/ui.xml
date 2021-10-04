@@ -1,0 +1,56 @@
+<layouts>
+    <ui id="Wavelet">
+        <input name="Extent" layout="l2" />
+    </ui>
+
+    <ui id="Cone">
+        <row>
+            <input name="Height" />
+            <input name="Radius" />
+            <input name="Resolution" />
+        </row>
+    </ui>
+
+    <ui id="ImplicitBox">
+        <input name="Bounds" layout="l2" />
+    </ui>
+
+    <ui id="Clip">
+        <input name="ClipFunction" />
+        <object name="ClipFunction" />
+        <show property="ClipFunction" constrain="Scalars">
+            <col>
+                <row>
+                    <input name="Value" />
+                    <input name="Scalars" />
+                </row>
+            </col>
+        </show>
+        <input name="InsideOut" class="mx-2"/>
+
+        <!-- Random UI with UI and font control -->
+
+        <hide property="ClipFunction" constrain="Scalars" class="py-6">
+            <text content="This is not a scalar" class="text-subtitle-1" />
+            <divider />
+            <row>
+                <spacer />
+                <col cols="3">
+                    <text
+                        class="blue darken-1 text-body-1 text-center"
+                        content="Center on the last 1/4"
+                    />
+                </col>
+            </row>
+            <row class="align-center elevation-6 mx-2">
+                <col>
+                    <text content="Left" class="font-weight-bold text-center" />
+                </col>
+                <divider vertical="" />
+                <col>
+                    <text content="Right" class="font-weight-bold text-center text-overline" />
+                </col>
+            </row>
+        </hide>
+    </ui>
+</layouts>

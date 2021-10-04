@@ -1,0 +1,61 @@
+<Simput :wsClient="wsClient">
+  <v-app>
+    <v-app-bar app dense>
+      <v-icon>mdi-database</v-icon>
+      <div class="title">SimPut Widgets</div>
+      <v-spacer />
+      <v-switch class="mx-2" v-model="autoUI" dense hide-details label="UI" />
+      <v-btn icon @click="showChangeSet = !showChangeSet">
+        <v-icon>mdi-bug</v-icon>
+      </v-btn>
+      <v-switch
+        class="mx-2"
+        v-model="simputAutoApply"
+        dense
+        hide-details
+        label="Apply "
+      />
+      <v-btn
+        class="mx-2"
+        small
+        outlined
+        icon
+        :disabled="!simputChangeSet"
+        @click="trigger('simputApply')"
+      >
+        <v-badge
+          :content="simputChangeSet"
+          offset-x="8"
+          offset-y="8"
+          :value="simputChangeSet"
+        >
+          <v-icon>mdi-database-import</v-icon>
+        </v-badge>
+      </v-btn>
+      <v-btn
+        class="mx-2"
+        small
+        outlined
+        icon
+        :disabled="!simputChangeSet"
+        @click="trigger('simputReset')"
+      >
+        <v-icon>mdi-undo-variant</v-icon>
+      </v-btn>
+      <v-select
+        v-model="active"
+        :items="choices"
+        dense
+        hide-details
+        style="max-width: 120px"
+        :key="tts"
+      />
+    </v-app-bar>
+    <v-main>
+      <v-container fluid v-if="active">
+        <pre v-if="showChangeSet">{{ simputChangeSetContent }}</pre>
+        <SimputItem :itemId="active" />
+      </v-container>
+    </v-main>
+  </v-app>
+</Simput>

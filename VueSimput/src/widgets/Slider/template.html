@@ -1,0 +1,75 @@
+<v-container fluid style="position: relative">
+  <div style="position: absolute; right: 10px; top: -1px; z-index: 1">
+    <v-btn v-if="help" icon x-small @click="showHelp = !showHelp">
+      <v-icon small>mdi-lifebuoy</v-icon>
+    </v-btn>
+    <v-btn v-if="computedSizeControl" icon x-small @click="addEntry">
+      <v-icon small>mdi-plus-circle-outline</v-icon>
+    </v-btn>
+  </div>
+
+  <v-row>
+    <v-col v-if="label && size != 1" class="py-0">
+      <div class="text-caption text--secondary">{{ label }}</div>
+      <v-divider />
+      <div v-if="help && showHelp" class="text-caption text--secondary">
+        {{ help }}
+      </div>
+    </v-col>
+  </v-row>
+  <v-row v-if="model != null">
+    <v-col v-if="size == 1" class="pt-0 pb-1">
+      <v-row no-gutters class="align-center">
+        <v-slider
+          class="text-truncate"
+          :name="`${data().type}:${name}:${i}`"
+          v-model="model"
+          @change="validate()"
+          :label="label"
+          hide-details
+          dense
+          :rules="[rule]"
+          :min="computedMin"
+          :max="computedMax"
+          :step="computedStep"
+        />
+        <div class="text-truncate text-right text-caption text--secondary mr-4" style="max-width: 60px;min-width: 60px;">{{ model }}</div>
+      </v-row>
+      <div v-if="help && showHelp" class="mt-0 mb-2 text-caption text--secondary">
+        {{ help }}
+      </div>
+    </v-col>
+    <v-col
+      class="py-1"
+      v-if="size != 1"
+      v-for="i in computedSize"
+      :key="i"
+      v-bind="getComponentProps(i-1)"
+    >
+      <v-row no-gutters class="align-center">
+        <v-slider
+          class="mt-0"
+          :name="`${data().type}:${name}:${i}`"
+          v-model="model[i - 1]"
+          @change="validate(i)"
+          hide-details
+          dense
+          :rules="[rule]"
+          :min="computedMin"
+          :max="computedMax"
+          :step="computedStep"
+        />
+        <div class="text-truncate text-right text-caption text--secondary" style="max-width: 60px;min-width: 60px;">{{ model[i - 1] }}</div>
+        <v-btn
+          v-if="computedSizeControl"
+          class="ml-2"
+          icon
+          x-small
+          @click="deleteEntry(i - 1)"
+        >
+          <v-icon>mdi-minus-circle-outline</v-icon>
+        </v-btn>
+      </v-row>
+    </v-col>
+  </v-row>
+</v-container>

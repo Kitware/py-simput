@@ -1,0 +1,66 @@
+<Simput :wsClient="wsClient">
+    <v-app>
+      <v-app-bar app dense>
+        <v-icon>mdi-database</v-icon>
+        <div class="title">SimPut</div>
+        <v-tabs v-model="tab" right>
+          <v-tab>Wavelet</v-tab>
+          <v-tab>Cone</v-tab>
+          <v-tab>Clip</v-tab>
+        </v-tabs>
+        <v-btn icon @click="showChangeSet = !showChangeSet">
+          <v-icon>mdi-bug</v-icon>
+        </v-btn>
+        <v-switch
+          class="mx-2"
+          v-model="simputAutoApply"
+          dense
+          hide-details
+          label="Apply "
+        />
+        <v-btn
+          class="mx-2"
+          small
+          outlined
+          icon
+          :disabled="!simputChangeSet"
+          @click="trigger('simputApply')"
+        >
+          <v-badge
+            :content="simputChangeSet"
+            offset-x="8"
+            offset-y="8"
+            :value="simputChangeSet"
+          >
+            <v-icon>mdi-database-import</v-icon>
+          </v-badge>
+        </v-btn>
+        <v-btn
+          class="mx-2"
+          small
+          outlined
+          icon
+          :disabled="!simputChangeSet"
+          @click="trigger('simputReset')"
+        >
+          <v-icon>mdi-undo-variant</v-icon>
+        </v-btn>
+      </v-app-bar>
+      <v-main>
+        <v-container fluid>
+          <pre v-if="showChangeSet">{{ simputChangeSetContent }}</pre>
+          <v-tabs-items v-model="tab">
+            <v-tab-item>
+              <SimputItem :itemId="wavelet" />
+            </v-tab-item>
+            <v-tab-item>
+              <SimputItem :itemId="cone" />
+            </v-tab-item>
+            <v-tab-item>
+              <SimputItem :itemId="clip" />
+            </v-tab-item>
+          </v-tabs-items>
+        </v-container>
+      </v-main>
+    </v-app>
+  </Simput>

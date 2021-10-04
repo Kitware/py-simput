@@ -1,0 +1,95 @@
+<Simput :wsClient="wsClient">
+  <v-app>
+    <v-navigation-drawer app clipped stateless v-model="showMenu" width="200">
+      <v-list dense>
+        <v-list-item-group v-model="activeId" color="primary">
+          <v-list-item v-for="(id, i) in personIds" :key="i" :value="id">
+            <v-list-item-content>
+              <v-list-item-title>
+                <SimputItem
+                  :itemId="id"
+                  no-ui
+                  #properties="{ FirstName, LastName }"
+                >
+                  {{ FirstName }} {{ LastName }}
+                </SimputItem>
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
+    </v-navigation-drawer>
+    <v-app-bar app dense clipped-left>
+      <v-btn icon @click="showMenu = !showMenu" class="mr-2">
+        <v-icon>mdi-database</v-icon>
+      </v-btn>
+      <div class="title">SimPut Model manipulation</div>
+      <v-spacer />
+      <v-btn small icon class="mx-4" @click="trigger('edit')">
+        <v-icon>mdi-pencil</v-icon>
+      </v-btn>
+      <v-select
+        v-model="lang"
+        :items="langs"
+        dense
+        hide-details
+        style="max-width: 120px"
+        :key="tts"
+      />
+      <v-switch class="mx-2" v-model="autoUI" dense hide-details label="UI" />
+      <v-switch
+        class="mx-2"
+        v-model="simputAutoApply"
+        dense
+        hide-details
+        label="Apply "
+      />
+      <v-btn
+        class="mx-2"
+        small
+        outlined
+        icon
+        :disabled="!simputChangeSet"
+        @click="trigger('simputApply')"
+      >
+        <v-badge
+          :content="simputChangeSet"
+          offset-x="8"
+          offset-y="8"
+          :value="simputChangeSet"
+        >
+          <v-icon>mdi-database-import</v-icon>
+        </v-badge>
+      </v-btn>
+      <v-btn
+        class="mx-2"
+        small
+        outlined
+        icon
+        :disabled="!simputChangeSet"
+        @click="trigger('simputReset')"
+      >
+        <v-icon>mdi-undo-variant</v-icon>
+      </v-btn>
+      <v-divider vertical class="mx-2" />
+      <v-btn
+        class="mx-2"
+        small
+        outlined
+        icon
+        :disabled="!activeId"
+        @click="trigger('delete')"
+      >
+        <v-icon>mdi-minus</v-icon>
+      </v-btn>
+      <v-btn class="mx-2" small outlined icon @click="trigger('create')">
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
+    </v-app-bar>
+    <v-main>
+      <v-container fluid v-if="activeId">
+        <SimputItem :itemId="activeId" />
+      </v-container>
+    </v-main>
+  </v-app>
+</Simput>
