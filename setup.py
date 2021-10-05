@@ -27,7 +27,7 @@ setup(
     ],
     keywords="Python Vue.js form",
     packages=find_packages(".", exclude=("tests.*", "tests")),
-    package_dir={"": "."},
+    package_dir={},
     package_data={},
     include_package_data=True,
     install_requires=["pyyaml>=5.4", "pywebvue"],
