@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/Kitware/py-simput/compare/v1.0.1...v1.0.2) (2021-10-05)
+
+
+### Bug Fixes
+
+* **VueSimput:** Bundle client code in Python package ([8130100](https://github.com/Kitware/py-simput/commit/813010083d87685888f09096984fffebfc5e25f2))
+
 ## [1.0.1](https://github.com/Kitware/py-simput/compare/v1.0.0...v1.0.1) (2021-10-04)
 
 
