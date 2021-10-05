@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/Kitware/py-simput/compare/v1.0.3...v1.0.4) (2021-10-05)
+
+
+### Bug Fixes
+
+* **VueSimput:** empty package_dir dictionary ([0ef959f](https://github.com/Kitware/py-simput/commit/0ef959fa19f3c29aa71e24eaec21286bf6b01733))
+
 ## [1.0.3](https://github.com/Kitware/py-simput/compare/v1.0.2...v1.0.3) (2021-10-05)
 
 
