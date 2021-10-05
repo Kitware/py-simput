@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/Kitware/py-simput/compare/v1.0.2...v1.0.3) (2021-10-05)
+
+
+### Bug Fixes
+
+* **VueSimput:** try to bundle client lib ([9cb0af1](https://github.com/Kitware/py-simput/commit/9cb0af1322b03107cb191fe26010c5443de844e9))
+
 ## [1.0.2](https://github.com/Kitware/py-simput/compare/v1.0.1...v1.0.2) (2021-10-05)
 
 
