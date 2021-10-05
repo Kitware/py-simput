@@ -2,3 +2,9 @@ simput
 docs
 dist
 examples
+simput.egg-info
+setup.py
+setup.cfg
+.github
+.husky
+MANIFEST.in
