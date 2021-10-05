@@ -42,6 +42,7 @@ def to_input_array_to_process(
     print(f"{method_name}({method_params})")
     fn(*method_params)
 
+
 r"""
 Filters will call a method while interpreting the prop value in a way
 that it make it compatible with the method profile.

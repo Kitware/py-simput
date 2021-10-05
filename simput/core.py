@@ -253,7 +253,7 @@ class ObjectManager:
                 self, obj, prop_name, __init_def, obj_def
             ):
                 obj["_user_edit"].discard(prop_name)
-                if __init_def.get('refresh', False) == 'auto':
+                if __init_def.get("refresh", False) == "auto":
                     obj["_initial_refresh"].add(prop_name)
                     obj["_initial_prop_dep"].add(__init_def.get("property"))
 
@@ -610,6 +610,7 @@ class ObjectManager:
 
 class UIManager:
     """UI Manager provide UI information to edit and input object properties"""
+
     id_generator = create_id_generator()
 
     def __init__(self, obj_manager, ui_resolver):
@@ -794,6 +795,7 @@ class UIManager:
 
 class ObjectFactory:
     """Concrete object helper"""
+
     def __init__(self, _obj_manager):
         self._obj_manager = _obj_manager
         self._map = {}
