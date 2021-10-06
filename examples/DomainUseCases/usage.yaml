@@ -1,0 +1,472 @@
+# -----------------------------------------------------------------------------
+# BooleanDomain
+# -----------------------------------------------------------------------------
+# <BooleanDomain name="bool" />
+CleanUnstructuredGrid:
+  ToleranceIsAbsolute:
+    constraints:
+      - type: Boolean
+
+# -----------------------------------------------------------------------------
+# ChartUseIndexForAxis
+# -----------------------------------------------------------------------------
+# TODO
+
+# -----------------------------------------------------------------------------
+# CompositeTree
+# -----------------------------------------------------------------------------
+# TODO
+
+# -----------------------------------------------------------------------------
+# DataAssembly
+# -----------------------------------------------------------------------------
+# TODO
+
+# -----------------------------------------------------------------------------
+# DataTypeDomain
+# -----------------------------------------------------------------------------
+# <InputProperty command="SetInputConnection"
+#                name="Input">
+#   <ProxyGroupDomain name="groups">
+#     <Group name="sources" />
+#     <Group name="filters" />
+#   </ProxyGroupDomain>
+#   <DataTypeDomain name="input_type">
+#     <DataType value="vtkDataSet" />
+#   </DataTypeDomain>
+# </InputProperty>
+CleanUnstructuredGrid:
+  Input:
+    constraints:
+      - type: HasTag
+        tags: [sources, filters]
+      - type: IsDataA
+        values:
+          - vtkDataSet
+
+# -----------------------------------------------------------------------------
+# ArrayRangeDomain
+# -----------------------------------------------------------------------------
+# => single value for contour (somewhere else name="range" is used even with size 1)
+#
+# <ArrayRangeDomain name="scalar_range">
+#   <RequiredProperties>
+#     <Property function="Input"
+#               name="Input" />
+#     <Property function="ArraySelection"
+#               name="SelectInputScalars" />
+#   </RequiredProperties>
+# </ArrayRangeDomain>
+
+Contour:
+  ContourValues:
+    default:
+      type: ArrayRange
+    constraints:
+      - type: ArrayRange
+        input: Input
+        arraySelection: SelectInputScalars
+        mode: mean
+
+# => range value for threshold
+#
+# <ArrayRangeDomain name="range">
+#   <RequiredProperties>
+#     <Property function="Input"
+#               name="Input" />
+#     <Property function="ArraySelection"
+#               name="SelectInputScalars" />
+#   </RequiredProperties>
+# </ArrayRangeDomain>
+
+IsoVolume:
+  ThresholdBetween:
+    default:
+      type: ArrayRange
+    constraints:
+      - type: ArrayRange
+        input: Input
+        arraySelection: SelectInputScalars
+        mode: range
+
+# => glyph filter for scaling
+#
+# <BoundsDomain mode="scaled_extent" name="bounds" scale_factor="0.1">
+#   <RequiredProperties>
+#     <Property function="Input" name="Input" />
+#   </RequiredProperties>
+# </BoundsDomain>
+# <ArrayRangeDomain name="scalar_range">
+#   <RequiredProperties>
+#     <Property function="Input" name="Input" />
+#     <Property function="ArraySelection" name="ScaleArray" />
+#   </RequiredProperties>
+# </ArrayRangeDomain>
+# <ArrayRangeDomain name="vector_range">
+#   <RequiredProperties>
+#     <Property function="Input" name="Input" />
+#     <Property function="ArraySelection" name="OrientationArray" />
+#   </RequiredProperties>
+# </ArrayRangeDomain>
+
+Glyph:
+  ScaleFactor:
+    default:
+      type: WHICH_CONTRAINT
+      computation: how does it work?
+    constraints:
+      - type: Bounds
+        mode: scaled_extent
+        scale_factor: 0.1
+      - type: ArrayRange
+        input: Input
+        arraySelection: ScaleArray
+        mode: mean
+      - type: ArrayRange
+        input: Input
+        arraySelection: OrientationArray
+        mode: mean
+
+# => use one side of a range
+#
+# <ArrayRangeDomain name="range"
+#                   default_mode="min">
+#   <RequiredProperties>
+#     <Property function="Input"
+#               name="Input" />
+#     <Property function="ArraySelection"
+#               name="SelectInputScalars" />
+#   </RequiredProperties>
+# </ArrayRangeDomain>
+
+Threshold:
+  LowerThreshold:
+    default:
+      type: ArrayRange
+    constraints:
+      - type: ArrayRange
+        input: Input
+        arraySelection: SelectInputArray
+        mode: min
+
+# -----------------------------------------------------------------------------
+# BoundsDomain
+# - mode : "normal", "magnitude", "oriented_magnitude", "scaled_extent", "array_scaled_extent", or "approximate_cell_length", "data_bounds".
+# - scale_factor : used in SCALED_EXTENT, ARRAY_SCALED_EXTENT and APPROXIMATE_CELL_LENGTH mode. Value is a floating point number that is used as the scale factor.
+# -----------------------------------------------------------------------------
+# <DoubleVectorProperty command="SetLocation"
+#                       default_values="0.0 0.0 0.0"
+#                       name="Location"
+#                       number_of_elements="3">
+#   <BoundsDomain default_mode="mid"
+#                 mode="normal"
+#                 name="range">
+#     <RequiredProperties>
+#       <Property function="Input"
+#                 name="Input" />
+#     </RequiredProperties>
+#   </BoundsDomain>
+# </DoubleVectorProperty>
+Location:
+  constraints:
+    - type: Bounds
+      input: Input
+      mode: center
+# <DoubleVectorProperty animateable="1"
+#                       command="SetValue"
+#                       label="Slice Offset Values"
+#                       name="ContourValues"
+#                       number_of_elements_per_command="1"
+#                       repeat_command="1"
+#                       set_number_command="SetNumberOfContours"
+#                       use_index="1"
+#                       panel_visibility="advanced">
+#   <Hints>
+#     <PropertyWidgetDecorator type="InputDataTypeDecorator" name="vtkHyperTreeGrid" exclude="1" />
+#   </Hints>
+#   <BoundsDomain mode="magnitude"
+#                 name="bounds">
+#     <RequiredProperties>
+#       <Property function="Input"
+#                 name="Input" />
+#     </RequiredProperties>
+#   </BoundsDomain>
+#   <Hints>
+#     <PropertyWidgetDecorator type="ShowWidgetDecorator">
+#       <Property name="PreserveInputCells" function="boolean_invert" />
+#     </PropertyWidgetDecorator>
+#   </Hints>
+# </DoubleVectorProperty>
+ContourValues:
+  constraints:
+    - type: Bounds
+      input: Input
+      mode: magnitude
+
+# -----------------------------------------------------------------------------
+# EnumerationDomain
+# -----------------------------------------------------------------------------
+# <EnumerationDomain name="enum">
+#   <Entry text="Parallel"
+#          value="0" />
+#   <Entry text="Perpendicular"
+#          value="1" />
+#   <Entry text="PerpendicularScale"
+#          value="2" />
+# </EnumerationDomain>
+
+# -----------------------------------------------------------------------------
+# NumberOfComponentsDomain
+# -----------------------------------------------------------------------------
+# <NumberOfComponentsDomain name="comps">
+#   <RequiredProperties>
+#     <Property function="Input"
+#               name="Input" />
+#     <Property function="ArraySelection"
+#               name="SelectInputArray" />
+#   </RequiredProperties>
+# </NumberOfComponentsDomain>
+
+# -----------------------------------------------------------------------------
+# FixedType
+# -----------------------------------------------------------------------------
+# TODO
+
+# -----------------------------------------------------------------------------
+# IndexSelection
+# -----------------------------------------------------------------------------
+# TODO
+
+# -----------------------------------------------------------------------------
+# InputArray
+# -----------------------------------------------------------------------------
+# <InputProperty command="SetInputConnection"
+#                name="Input">
+#   <ProxyGroupDomain name="groups">
+#     <Group name="sources" />
+#     <Group name="filters" />
+#   </ProxyGroupDomain>
+#   <DataTypeDomain name="input_type">
+#     <DataType value="vtkDataSet" />
+#   </DataTypeDomain>
+#   <InputArrayDomain name="scale_array"
+#                     number_of_components="1,3"
+#                     optional="1" />
+#   <InputArrayDomain name="vector_array"
+#                     number_of_components="3"
+#                     optional="1" />
+# </InputProperty>
+# <StringVectorProperty command="SetInputArrayToProcess"
+#                       default_values="1"
+#                       element_types="0 0 0 0 2"
+#                       name="OrientationArray"
+#                       number_of_elements="5">
+#   <!-- default value=1 so normals go to the right place -->
+#   <ArrayListDomain attribute_type="Vectors"
+#                    input_domain_name="vector_array"
+#                    name="array_list"
+#                    none_string="No orientation array">
+#     <RequiredProperties>
+#       <Property function="Input"
+#                 name="Input" />
+#     </RequiredProperties>
+#   </ArrayListDomain>
+# </StringVectorProperty>
+# <StringVectorProperty command="SetInputArrayToProcess"
+#                       default_values="0"
+#                       element_types="0 0 0 0 2"
+#                       name="ScaleArray"
+#                       number_of_elements="5">
+#   <ArrayListDomain attribute_type="Scalars"
+#                    input_domain_name="scale_array"
+#                    name="array_list"
+#                    none_string="No scale array">
+#     <RequiredProperties>
+#       <Property function="Input"
+#                 name="Input" />
+#     </RequiredProperties>
+#   </ArrayListDomain>
+# </StringVectorProperty>
+
+Glyph:
+  Input:
+    constraints:
+      - type: IsA
+        values:
+          - vtkDataSet
+      - name: scale_array
+        type: Array
+        location: Point
+        size: [1, 3]
+        isA:
+          - vtkDataArray
+
+  OrientationArray:
+    constraints:
+      - type: FieldSelector
+        property: Input
+        location: Point
+        size: 3
+        isA:
+          - vtkDataArray
+  ScaleArray:
+    constraints:
+      - type: FieldSelector
+        property: Input
+        location: Point
+        size: [1, 3]
+        isA:
+          - vtkDataArray
+  ScaleArray2:
+    constraints:
+      - type: FieldSelector
+        property: Input
+        constraint: scale_array
+# -----------------------------------------------------------------------------
+# IntRange
+# -----------------------------------------------------------------------------
+# <IntVectorProperty command="SetMaximumNumberOfSamplePoints"
+#                   number_of_elements="1"
+#                   default_values="5000"
+#                   name="MaximumNumberOfSamplePoints">
+#   <IntRangeDomain min="1" name="range" />
+# </IntVectorProperty>
+# => Do we need a templated version or can we have a generic one that respect
+#    property type.
+MaximumNumberOfSamplePoints:
+  constraints:
+    - type: Range
+      min: 1
+
+# -----------------------------------------------------------------------------
+# AMRLevels
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# AnimationFrameWindow
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Dimensions
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Extent
+# -----------------------------------------------------------------------------
+# <IntVectorProperty command="SetVOI"
+#                    default_values="0 0 0 0 0 0"
+#                    name="VOI"
+#                    number_of_elements="6"
+#                    panel_visibility="default">
+#   <ExtentDomain name="extent">
+#     <RequiredProperties>
+#       <Property function="Input"
+#                 name="Input" />
+#     </RequiredProperties>
+#   </ExtentDomain>
+# </IntVectorProperty>
+VOI:
+  constraints:
+    - type: Extent
+      input: Input
+# -----------------------------------------------------------------------------
+# TimeStepIndex
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ViewResolution
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# MultiplexerInput
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ProxyList
+# -----------------------------------------------------------------------------
+# <ProxyListDomain name="proxy_list">
+#   <Proxy group="sources" name="ArrowSource" />
+#   <Proxy group="sources" name="ConeSource" />
+#   <Proxy group="sources" name="CubeSource" />
+#   <Proxy group="sources" name="CylinderSource" />
+#   <Proxy group="sources" name="LineSource" />
+#   <Proxy group="sources" name="SphereSource" />
+#   <Proxy group="sources" name="GlyphSource2D" />
+# </ProxyListDomain>
+ClipFunction:
+  type: object
+  size: 1
+  initial:
+    type: ObjectBuilder
+    initial: Default
+    bind: Filter
+    values:
+      - name: Default
+        type: vtkPlane
+      - name: Scalars
+        type: vtkNoneImplicit
+  constraints:
+    - type: ObjectBuilder
+      anchor: ClipFunction
+# -----------------------------------------------------------------------------
+# RangedTransferFunction
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# StringList
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ArrayListDomain
+# -----------------------------------------------------------------------------
+# <ArrayListDomain attribute_type="Scalars"
+#                  data_type="VTK_UNSIGNED_CHAR"
+#                  name="array_list">
+#   <RequiredProperties>
+#     <Property function="Input"
+#               name="Input" />
+#   </RequiredProperties>
+# </ArrayListDomain>
+#
+# <ArrayListDomain attribute_type="Vectors"
+#                  name="array_list">
+#   <RequiredProperties>
+#     <Property function="Input"
+#               name="Input" />
+#   </RequiredProperties>
+# </ArrayListDomain>
+#
+# <ArrayListDomain name="array_list"
+#                  input_domain_name="scale_array">
+#   <RequiredProperties>
+#     <Property function="Input"
+#               name="Input" />
+#     <Property function="FieldDataSelection"
+#               name="AttributeType" />
+#   </RequiredProperties>
+# </ArrayListDomain>
+# -----------------------------------------------------------------------------
+# RepresentationArrayList
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ArraySelection
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# SIL
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ChartSeriesList
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ChartSeriesSelection
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# FileList
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# InputFileName
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Material
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Renderer
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# RepresentationType
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# SubsetInclusionLattice
+# -----------------------------------------------------------------------------

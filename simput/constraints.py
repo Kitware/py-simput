@@ -14,6 +14,81 @@ from simput import handlers
 #     The method will list the available values or the proper set of
 #     informations to compute locally what are the available values.
 # =============================================================================
+# - Boolean: a domain with two values (true or false)
+#   - ChartUseIndexForAxis:
+#       add logic to pick an appropriate default e.g. UseIndexForXAxis for bar
+#       and line charts needs to be set to 0 by default, if the XArrayName
+#       contains one of the known arrays such as "bin_extents", "arc_length",
+#       and set to 1 otherwise. This class encapsulates that logic.
+# - CompositeTree: https://kitware.github.io/paraview-docs/latest/cxx/classvtkSMCompositeTreeDomain.html#details
+# - DataAssembly: https://kitware.github.io/paraview-docs/latest/cxx/classvtkSMDataAssemblyDomain.html#details
+# - DataType: https://kitware.github.io/paraview-docs/latest/cxx/classvtkSMDataTypeDomain.html#details
+#    => thinking IsA but may have a problem between algo vs dataset
+#       (This seems to be specific to vtkSMSourceProxy)
+# - DiscreateDouble: https://kitware.github.io/paraview-docs/latest/cxx/classvtkSMDiscreteDoubleDomain.html#details
+#      represents a set of double values. It supports a maximum of 256 values.
+#    => Could not find any reference to it in PV/src/xml
+# - DoubleRange (abstract)
+#   - ArrayRange: https://kitware.github.io/paraview-docs/latest/cxx/classvtkSMArrayRangeDomain.html#details
+#   - Bounds
+# - Enumeration
+#   - FieldData:
+#      => Deprecated after 5.6
+#   - NumberOfComponents
+# - FixedType
+# - IndexSelection
+# - InputArray
+# - IntRange
+#   - AMRLevels
+#   - AnimationFrameWindow
+#   - Dimensions
+#   - Extent
+#   - TimeStepIndex
+#   - ViewResolution
+# - MultiplexerInput
+# - ProxyGroup  <== Want to replace with tag filtering...
+# - ProxyList
+#   - RangedTransferFunction
+# - RangeDomainTemplate
+# - StringList
+#   - ArrayListDomain
+#     - RepresentationArrayList
+#   - ArraySelection
+#     - SIL
+#   - ChartSeriesList
+#   - ChartSeriesSelection
+#   - FileList
+#   - InputFileName
+#   - Material
+#   - Renderer
+#   - RepresentationType
+#   - SubsetInclusionLattice
+# =============================================================================
+# represents the possible values a property can have
+#
+# vtkSMDomain is an abstract class that describes the "domain" of a a widget.
+# A domain is a collection of possible values a property can have.
+# Each domain can depend on one or more properties to compute it's values.
+# This are called "required" properties and can be set in the XML configuration file.
+#
+# Every time a domain changes it must fire a vtkCommand::DomainModifiedEvent.
+# Applications may decide to update the UI every-time the domain changes.
+# As a result, domains ideally should only fire that event when their values
+# change for real not just potentially changed.
+#
+#  - IsInDomain(propToTest)
+#  - Update(uncheckedValueOfProp) <- To capture other prop update that we depend on?
+#  - SetAnimationValue(prop, int, double)
+#  - SetDefaultValues(propToUpdate)
+#  - Get/Set IsOptional() => if true IsInDomain() always return true
+#  - Set/GetProperty() => return hooked up property
+#       => if property id linked why IsInDomain/Update/SetDefaultValues take a prop?
+#  - GetInputDataInformation(fnName, inputIndex)
+#  - GetNumberOfInputConnections(fnName)
+#  - Save/LoadState(xml)
+#  - Get/Remove/AddRequiredProperty(prop, name)
+#  - DomainModified() => trigger event when things changed
+# =============================================================================
 
 
 def is_valid(
