@@ -90,10 +90,10 @@ Person:
             value: NE
           - text: Nevada
             value: NV
-          - text: New
-            value: Ha
-          - text: New
-            value: Je
+          - text: New Hampshire
+            value: NH
+          - text: New Jersey
+            value: NJ
           - text: New Mexico
             value: NM
           - text: New York
@@ -141,18 +141,3 @@ Person:
     type: uint64
   Country:
     type: string
-
-Agenda:
-  Contacts:
-    _label: List of contacts
-    size: -1
-    type: object
-    constraints:
-      - type: IsA
-        klass: Person
-  Active:
-    _label: Active contact
-    type: object
-    constraints:
-      - type: PropertyList
-        property: Contacts

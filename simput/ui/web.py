@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+import json
 
 VUETIFY_MAP = {
     "ui": "div",
@@ -35,13 +36,14 @@ class VuetifyResolver:
                     ctype == "LabelList"
                     or ctype == "PropertyList"
                     or ctype == "FieldSelector"
-                    or ctype == "ObjectBuilder"
+                    or ctype == "ProxyBuilder"
                     or ctype == "HasTags"
                 ):
                     values = constraint.get("values", [])
                     prop_name = constraint.get("property", None)
-                    if len(values) and ctype != "HasTags":
+                    if len(values) and ctype not in ["HasTags", "ProxyBuilder"]:
                         attributes[":items"] = values
+
                     if prop_name and ctype != "FieldSelector":
                         attributes["itemsProperty"] = prop_name
                     widget = "sw-select"
@@ -67,8 +69,8 @@ class VuetifyResolver:
                 widget = "sw-switch"
 
             return widget, attributes
-        elif elem.tag == "object":
-            return "sw-object", attributes
+        elif elem.tag == "proxy":
+            return "sw-proxy", attributes
 
         print(f"No mapping for {elem.tag}")
         return elem.tag, attributes

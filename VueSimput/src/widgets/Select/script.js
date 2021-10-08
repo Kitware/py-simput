@@ -106,7 +106,7 @@ export default {
 
       return availableOptions?.List?.available
         || availableOptions?.HasTags?.available
-        || availableOptions?.ObjectBuilder?.available
+        || availableOptions?.ProxyBuilder?.available
         || availableOptions?.FieldSelector?.available;
     },
     selectedItem() {

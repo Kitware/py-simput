@@ -84,33 +84,31 @@ Clip:
   _tags:
     - Algorithm
   Input:
-    type: object
+    type: proxy
     size: 1
     constraints:
       - type: HasTags
         values:
           - Algorithm
   ClipFunction:
-    type: object
+    type: proxy
     size: 1
-    initial:
-      type: ObjectBuilder
-      initial: Plane
-      values:
-        - name: Plane
-          type: ImplicitPlane
-        - name: Box
-          type: ImplicitBox
-        - name: Sphere
-          type: ImplicitSphere
-        - name: Scalar
-          type: ImplicitPlaceHolder
     constraints:
-      - type: ObjectBuilder
-        anchor: ClipFunction
+      - type: ProxyBuilder
+        initial: Plane
+        validator:
+        values:
+          - name: Plane
+            type: ImplicitPlane
+          - name: Box
+            type: ImplicitBox
+          - name: Sphere
+            type: ImplicitSphere
+          - name: Scalar
+            type: ImplicitPlaceHolder
       - type: IsEqual
         value: Scalar
-        available: ObjectBuilder
+        available: ProxyBuilder
         name: Scalars
   InsideOut:
     size: 1

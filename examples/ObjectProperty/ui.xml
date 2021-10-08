@@ -17,7 +17,7 @@
 
     <ui id="Clip">
         <input name="ClipFunction" />
-        <object name="ClipFunction" />
+        <proxy name="ClipFunction" />
         <show property="ClipFunction" constrain="Scalars">
             <col>
                 <row>

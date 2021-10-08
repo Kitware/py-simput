@@ -1,7 +1,7 @@
 import SimputInput from '../../components/SimputItem';
 
 export default {
-  name: 'swObject',
+  name: 'swProxy',
   props: {
     name: {
       type: String,

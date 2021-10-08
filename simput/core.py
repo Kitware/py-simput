@@ -3,133 +3,586 @@ import json
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from simput import constraints, filters
+from simput import ui
 
 try:
     from yaml import CDumper as YAMLDumper
 except ImportError:
     from yaml import Dumper as YAMLDumper
 
-###############################################################################
+from icecream import ic
 
-
-def create_id_generator():
+# -----------------------------------------------------------------------------
+# Generic ID generator
+# -----------------------------------------------------------------------------
+def create_id_generator(prefix=""):
     count = 1
     while True:
-        yield f"{count}"
+        yield f"{prefix}{count}"
         count += 1
 
 
-def extract_ui(yaml_content):
-    print("-" * 80)
-    print("Start UI extract")
-    print("-" * 80)
-    ui_map = {}
-    prop_indent = 10
-    current_type = None
-    current_list = []
-    last_property = None
-    for line in yaml_content.splitlines():
-        stline = line.strip()
-        sline = stline.split(":")[0]
-        # Skip empty lines or comments
-        if len(sline) == 0 or sline[0] == "#":
-            # print(f"skip a: {sline}")
-            continue
-
-        indent = line.index(sline)
-        if indent == 0:
-            # Detect new object definition
-            if current_type:
-                print(f"Add ui for {current_type}")
-                current_list.insert(0, f'<ui id="{current_type}">')
-                current_list.append("</ui>")
-                ui_map[current_type] = "\n".join(current_list)
-                current_list = []
-            current_type = line.strip().split(":")[0]
-        else:
-            # Detect property
-            if prop_indent > indent:
-                prop_indent = indent
-
-            # skip hidden prop
-            if stline == "_ui: skip":
-                last_property = None
-                current_list.pop()
-                continue
-
-            # skip object prop
-            if stline == "_ui: object":
-                current_list.pop()
-                continue
-
-            if stline == "type: object" and last_property:
-                current_list.append(f'  <object name="{last_property}" />')
-
-            if indent > prop_indent or sline[0] == "_":
-                # print(f"skip b: {sline}")
-                continue
-
-            current_list.append(f'  <input name="{sline}" />')
-            last_property = sline
-
-    # Always have a ui container
-    print(f"Add ui for {current_type}")
-    current_list.insert(0, f'<ui id="{current_type}">')
-    current_list.append("</ui>")
-    ui_map[current_type] = "\n".join(current_list)
-    print("-" * 80)
-
-    return ui_map
-
-
-def is_valid_value(v):
-    if v is None:
-        return False
-    if isinstance(v, (str, bool, int, float)):
-        return True
-    if isinstance(v, (list, tuple)):
-        for item in v:
-            if not is_valid_value(item):
-                return False
-        return True
-
+# -----------------------------------------------------------------------------
+# Helper method to help detect changes when setting new property value
+# -----------------------------------------------------------------------------
+def is_equal(a, b):
     return False
 
 
-class ObjectManager:
-    """Data Manager from model definition"""
+###############################################################################
+# "Remoting" layers
+###############################################################################
 
-    id_generator = create_id_generator()
+# -----------------------------------------------------------------------------
+# ObjectHelper
+# -----------------------------------------------------------------------------
+# Light weight object with convinient API that can be easily be serialized and
+# shared across locations.
+# -----------------------------------------------------------------------------
+class ObjectHelper:
+    __available_types = {}
 
-    def __init__(self):
-        self._manager_id = next(ObjectManager.id_generator)
-        self._mtime = 1
-        self._id = 1
-        self._model_definition = {}
-        self._object_map = {}
-        self._listeners = {}
-        self._listener_id = 1
-        self._tag_map = {}
-        self._obj_factory = ObjectFactory(self)
+    @staticmethod
+    def create(state):
+        if isinstance(state, str):
+            state = json.loads(state)
+        if isinstance(state, dict):
+            name = state.get("type")
+            return ObjectHelper.__available_types[name](**state)
+
+        raise TypeError(f"Could not find ObjectHelper from {state}")
+
+    @staticmethod
+    def register(name, constructor):
+        ObjectHelper.__available_types(name, constructor)
+
+
+# -----------------------------------------------------------------------------
+# Proxy
+# -----------------------------------------------------------------------------
+# Virtual object keeping track of a set of a properties for an other object.
+# Proxy can flush its local state to the object it control by calling commit().
+# To reset uncommited changes, just call reset().
+# Proxy properties can be access with the . and [] notation.
+# -----------------------------------------------------------------------------
+class Proxy:
+    __id_generator = create_id_generator()
+    __api = set(
+        [
+            "definition",
+            "id",
+            "type",
+            "object",
+            "manager",
+            "modified",
+            "mtime",
+            "edited_property_names",
+            "tags",
+            "own",
+            "set_property",
+            "set_properties",
+            "get_properties",
+            "commit",
+            "reset",
+            "on",
+            "off",
+            "state",
+            "update_from_state",
+            "remap_ids",
+        ]
+    )
+
+    def __init__(
+        self, __obj_manager, __type, __object=None, _name=None, _tags=[], **kwargs
+    ):
+        self._id = next(Proxy.__id_generator)
+        self._name = _name or __type
+        self._mtime = __obj_manager.mtime
+        self._obj_manager = __obj_manager
+        self._type = __type
+        self._pushed_properties = {}
+        self._properties = {}
+        self._dirty_properties = set()
+        self._listeners = set()
+        self._tags = set(_tags)
+        self._tags.update(self.definition.get("_tags", []))
+
+        # Proxy can be fully virtual (:None)
+        self._object = __object
+        # proxy id that we created and therefore that we should manage
+        self._own = set()
+
+        # Handle registration
+        self._obj_manager._id_map[self._id] = self
+        for tag in self._tags:
+            self._obj_manager._tag_map.setdefault(tag, set()).add(self._id)
+
+        # handle initial
+        for _prop_name, _prop_def in self.definition.items():
+            if _prop_name.startswith("_"):
+                continue
+
+            _init_def = _prop_def.get("initial", None)
+            _type = _prop_def.get("type", "")
+            if _prop_name in kwargs:
+                self.set_property(_prop_name, kwargs[_prop_name])
+            elif _type == "object":
+                self.set_property(_prop_name, _init_def)
+            elif isinstance(_init_def, dict):
+                print("+++ Don't know how to deal with domain yet", _init_def)
+            elif _init_def:
+                self.set_property(_prop_name, _init_def)
+
+    @property
+    def definition(self):
+        return self._obj_manager.get_definition(self._type)
 
     @property
     def id(self):
-        return self._manager_id
-
-    def reset(self):
-        prev_ids = list(self._object_map.keys())
-        self._mtime = 1
-        self._id = 1
-        self._model_definition = {}
-        self._object_map = {}
-        self._emit("delete", ids=prev_ids)
-
-    def _next_id(self):
-        self._id += 1
         return self._id
 
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def object(self):
+        return self._object
+
+    @property
+    def manager(self):
+        return self._obj_manager
+
     def modified(self):
+        self._mtime = self.manager.modified()
+
+    @property
+    def mtime(self):
+        return self._mtime
+
+    @property
+    def edited_property_names(self):
+        return self._dirty_properties
+
+    @property
+    def tags(self):
+        return self._tags
+
+    @tags.setter
+    def tags(self, value):
+        self._tags = set(value)
+
+    @property
+    def own(self):
+        """List of proxy ids we created"""
+        return self._own
+
+    @own.setter
+    def own(self, ids):
+        if isinstance(ids, str):
+            # single id
+            self._own.add(ids)
+        elif isinstance(ids, Proxy):
+            self._own.add(ids.id)
+        else:
+            self._own.update(ids)
+
+    def set_property(self, name, value):
+        # convert any invalid indirect value (proxy, object)
+        prop_type = self.definition.get(name).get("type", "string")
+        safe_value = value
+        if value is not None:
+            if prop_type == "proxy" and not isinstance(value, str):
+                safe_value = value.id
+            if prop_type == "object" and not isinstance(value, ObjectHelper):
+                safe_value = ObjectHelper.create(value)
+
+        # check if change
+        change_detected = False
+        prev_value = self._properties.get(name, None)
+        saved_value = self._pushed_properties.get(name, None)
+        if is_equal(safe_value, saved_value):
+            self._dirty_properties.discard(name)
+        elif not is_equal(safe_value, prev_value):
+            self._dirty_properties.add(name)
+            change_detected = True
+        self._properties[name] = safe_value
+
+        if change_detected:
+            self._obj_manager.dirty_ids.add(self._id)
+
+        return change_detected
+
+    def set_properties(self, props):
+        change_count = 0
+        for name, value in props.items():
+            if self.set_property(name, value):
+                change_count += 1
+
+        self._emit(
+            "update",
+            modified=(change_count > 0),
+            properties_dirty=list(self._dirty_properties),
+            properties_change=list(props.keys()),
+        )
+        return change_count
+
+    def get_properties(self):
+        return self._properties
+
+    def commit(self):
+        self._obj_manager.dirty_ids.discard(self._id)
+        if self._dirty_properties:
+            properties_dirty = list(self._dirty_properties)
+            if self._linked_object:
+                push(self)
+
+            self._pushed_properties.update(self._properties)
+            self._dirty_properties.clear()
+            self._emit("commit", properties_dirty=properties_dirty)
+            return True
+        return False
+
+    def reset(self):
+        self._obj_manager.dirty_ids.discard(self._id)
+        if self._dirty_properties:
+            properties_dirty = list(self._dirty_properties)
+            self._dirty_properties.clear()
+            self._properties.update(self._pushed_properties)
+            self._emit("reset", properties_dirty=properties_dirty)
+            return True
+
+    def on(self, fn):
+        self._listeners.add(fn)
+
+    def off(self, fn):
+        self._listeners.discard(fn)
+
+    def _emit(self, topic, *args, **kwargs):
+        for fn in self._listeners:
+            try:
+                fn(topic, *args, **kwargs)
+            except:
+                print(f"Error calling {fn} for {topic}:{args}, {kwargs}")
+
+    def __getitem__(self, name):
+        """value = proxy[prop_name]"""
+
+        if self._properties and name in self._properties:
+            if "proxy" == self.definition.get(name).get("type"):
+                return self._obj_manager.get(self._properties.get(name))
+
+            return self._properties[name]
+
+        raise AttributeError()
+
+    def __setitem__(self, name, value):
+        """proxy[prop_name] = value"""
+        if name in self._properties and self.set_property(name, value):
+            self._emit(
+                "update",
+                modified=True,
+                properties_dirty=list(self._dirty_properties),
+                properties_change=[name],
+            )
+        else:
+            print(f"Attribute {name} is not defined for {self._elem_name}")
+
+    def __getattr__(self, name: str):
+        """value = proxy.prop_name"""
+        if name.startswith("_"):
+            return self.__dict__.get(name, None)
+
+        if name in Proxy.__api:
+            return self.__dict__.get(name, None)
+
+        # Fallback to properties
+        return self.__getitem__(name)
+
+    def __setattr__(self, name: str, value):
+        """proxy.prop_name = value"""
+        if name.startswith("_"):
+            super().__setattr__(name, value)
+
+        if self._properties and name in self._properties:
+            self.__setitem__(name, value)
+        else:
+            super().__setattr__(name, value)
+
+    @property
+    def state(self):
+        _properties = {}
+        _obj_def = self.definition
+
+        for prop_name, prop_def in _obj_def.items():
+            if prop_name.startswith("_"):
+                continue
+
+            if prop_def.get("type", "") == "object":
+                _obj = self._properties.get(prop_name, None)
+                if _obj:
+                    _properties[prop_name] = _obj.state
+            else:
+                _properties[prop_name] = self._properties.get(prop_name, None)
+
+        return {
+            "id": self._id,
+            "type": self._type,
+            "name": self._name,
+            "tags": list(self._tags),
+            "mtime": self._mtime,
+            "own": list(self._own),
+            "properties": _properties,
+        }
+
+    def update_from_state(self, state):
+        self._own = set(state.get("own", []))
+        self._tags.update(state.get("tags", []))
+        for prop_name, prop_value in state.get("properties", {}).items():
+            self.set_property(prop_name, prop_value)
+
+        for tag in self._tags:
+            self._obj_manager._tag_map.setdefault(tag, set()).add(self._id)
+
+    def remap_ids(self, id_map):
+        # Update proxy dependency
+        _new_own = set()
+        for old_id in self._own:
+            _new_own.add(id_map[old_id])
+        self._own = _new_own
+
+        # Update proxy props
+        for prop_name, prop_def in self.definition.items():
+            if prop_def.get("type", "") == "proxy":
+                self._properties[prop_name] = id_map[self._properties[prop_name]]
+
+
+# -----------------------------------------------------------------------------
+# Domain
+# -----------------------------------------------------------------------------
+# A Domain is responsible for:
+#  - testing if a property is valid
+#  - compute and set a property value
+#  - list what are the possible value options
+#
+# Domain meta information:
+# - level describe the importance of the domain
+#    (0: info), (1: warning), (2: error)
+# - message personalize the context in which a given domain is used to help
+#   understand why a given value is not valid.
+# -----------------------------------------------------------------------------
+class Domain:
+    __domain_availables = {}
+
+    @staticmethod
+    def register(name: str, constructor):
+        Domain.__domain_availables[name] = constructor
+
+    @staticmethod
+    def create(proxy: Proxy):
+        domains = {}
+        definition = proxy.definition
+        for name in definition:
+            if name.startswith("_"):
+                continue
+            _prop_domains = domains.setdefault(name, {})
+            for domain_def in definition[name].get("constraints", []):
+                _type = domain_def.get("type")
+                _name = domain_def.get("name", _type)
+                if _type in Domain.__domain_availables:
+                    domain_inst = Domain.__domain_availables[_type](
+                        proxy, name, **domain_def
+                    )
+                    if _name not in _prop_domains:
+                        _prop_domains[_name] = domain_inst
+                    else:
+                        count = 1
+                        while f"{_name}_{count}" in _prop_domains:
+                            count += 1
+                        _prop_domains[f"{_name}_{count}"] = domain_inst
+
+                    # Try default set
+                    domain_inst.set_value()
+                else:
+                    print(f"Could not find domain of type: {_type}")
+
+        return domains
+
+    def __init__(self, proxy: Proxy, property: str, **kwargs):
+        self._proxy = proxy
+        self._property_name = property
+        self._dependent_properties = set()
+        self._need_set = False
+        self._proxy.on(self._on_proxy_change)
+        self._level = kwargs.get("level", 0)
+        self._message = kwargs.get("message", str(__class__))
+        self._should_compute_value = "initial" in kwargs
+
+    def __del__(self):
+        self._proxy.off(self._on_proxy_change)
+
+    def _on_proxy_change(
+        self, topic, modified=False, properties_dirty=[], properties_change=[]
+    ):
+        if self._need_set:
+            need_compute = topic in ["commit", "reset"] and (
+                set(properties_dirty) & self._dependent_properties
+            )
+            need_compute |= topic == "update" and (
+                set(properties_change) & self._dependent_properties
+            )
+            if need_compute:
+                self.set_value()
+
+    # def validate(self, value):
+    #     return value
+
+    def compute_value(self):
+        return None
+
+    def set_value(self):
+        return False
+
+    def available(self):
+        return None
+
+    @property
+    def value(self):
+        return self._proxy[self._property_name]
+
+    @value.setter
+    def value(self, v):
+        self._proxy.set_property(self._property_name, v)
+
+    def valid(self, required_level=2):
+        return True
+
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, value):
+        self._level = value
+
+    @property
+    def message(self):
+        return self._message
+
+    @message.setter
+    def message(self, value):
+        self._message = value
+
+    def hints(self):
+        return []
+
+# ----------------------------------------------------------------------------
+# ProxyManagerDecorator
+# ----------------------------------------------------------------------------
+# Allow to decorate ProxyManager to extend default behavior by hooking to
+# life cycle calls.
+# ----------------------------------------------------------------------------
+class ProxyManagerDecorator:
+    def __init__(self):
+        self._pxm = None
+
+    def set_proxymanager(self, pxm):
+        self._pxm = pxm
+
+    def before_modified(self, mtime, **kwargs):
+        pass
+
+    def after_modified(self, mtime, **kwargs):
+        pass
+
+    def before_load_model(self, definition, **kwargs):
+        pass
+
+    def after_load_model(self, definition, **kwargs):
+        pass
+
+    def proxy_create_before(self, proxy_type, initial_values, **kwargs):
+        pass
+
+    def proxy_create_before_commit(self, proxy_type, initial_values, proxy, **kwargs):
+        pass
+
+    def proxy_create_after_commit(self, proxy_type, initial_values, proxy, **kwargs):
+        pass
+
+    def proxy_delete_before(self, proxy_id, trigger_modified, **kwargs):
+        pass
+
+    def proxy_delete_after_self(self, proxy_id, trigger_modified, proxy, **kwargs):
+        pass
+
+    def proxy_delete_after_own(self, proxy_id, trigger_modified, proxy, **kwargs):
+        pass
+
+    def proxy_update_before(self, change_set, **kwargs):
+        pass
+
+    def proxy_update_after(self, change_set, dirty_ids, **kwargs):
+        pass
+
+    def export_before(self, file_output, **kwargs):
+        pass
+
+    def export_after(self, file_output, data, **kwargs):
+        pass
+
+    def import_before(self, file_input, file_content, **kwargs):
+        pass
+
+    def import_before_processing(self, file_input, file_content, data, **kwargs):
+        pass
+
+    def import_after(self, file_input, file_content, data, new_ids, id_remap, **kwargs):
+        pass
+
+
+# ----------------------------------------------------------------------------
+# ProxyManager
+# ----------------------------------------------------------------------------
+# A ProxyManager needs to load some definitions in order to be able to create
+# proxies which will hold a set of values in their properties.
+# A proxy state can then be used to control a concrete object that can be
+# local or remote.
+# Proxies provide a nice infrastructure to map a UI to their state with
+# constraints and more.
+# The ProxyManager is responsible for keeping track of proxies lifecycle and
+# finding them from their Id or Tags.
+# ----------------------------------------------------------------------------
+class ProxyManager:
+    """Proxy Manager from model definition"""
+
+    __id_generator = create_id_generator("pxm_")
+
+    def __init__(self, object_factory=None):
+        self._id = next(ProxyManager.__id_generator)
+
+        self._mtime = 1
+        self._listeners = set()
+        self._behavior_add_on = set()
+        self._obj_factory = object_factory
+
+        self._model_definition = {}
+        self._id_map = {}
+        self._tag_map = {}
+        self.dirty_ids = set()
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def mtime(self):
+        return self._mtime
+
+    def modified(self):
+        self._life_cycle("before_modified", mtime=self._mtime)
         self._mtime += 1
+        self._life_cycle("after_modified", mtime=self._mtime)
         return self._mtime
 
     def _apply_mixin(self, *names):
@@ -137,7 +590,7 @@ class ObjectManager:
             names = self._model_definition.keys()
 
         for name in names:
-            if name[0] == "_":
+            if name.startswith("_"):
                 continue
             object_definition = self._model_definition.get(name, {})
             mixins = object_definition.get("_mixins", [])
@@ -145,153 +598,42 @@ class ObjectManager:
                 mixin = self._model_definition.get(mixin_name, {})
                 object_definition.update(mixin)
 
-    def _apply_initial(self, obj):
-        """Return true if more initialization is required"""
-        old_pending = obj["_pending_init"]
-        rexec_pending = obj["_initial_refresh"]
-
-        if len(old_pending) == 0 and len(rexec_pending) == 0:
-            return False
-
-        obj_id = obj["id"]
-        obj_def = self.get_definition(obj["type"])
-        new_pending = []
-        rexec_update = 0
-
-        # If a property is untouched by user we keep updating it from domain
-        # using computed initial value (domain is owner of prop value)
-        for prop in rexec_pending:
-            if self.refresh(obj_id, prop):
-                rexec_update += 1
-
-        # Set any property value that has an "initial" that can resolve
-        for prop in old_pending:
-            prop_init_def = obj_def[prop]["initial"]
-            if isinstance(prop_init_def, dict):
-                # computed value
-                itype = prop_init_def.get("type", None)
-                if itype in constraints.__dict__:
-                    if not constraints.__dict__[itype].initial(
-                        self, obj, prop, prop_init_def, obj_def
-                    ):
-                        new_pending.append(prop)
-                else:
-                    print(f"==> Don't know what to do with {itype}")
-                    new_pending.append(prop)
-            else:
-                # basic static typed value
-                obj["properties"][prop] = prop_init_def
-
-        obj["_pending_init"] = new_pending
-
-        # Did we manage to update a proprety?
-        return len(old_pending) != len(new_pending) or rexec_update > 0
-
-    # -------------------------------------------------------------------------
-    # Object Factory
-    # -------------------------------------------------------------------------
-
-    def register_construtor(self, class_name, constructor):
-        """
-        Provide binding to concrete object in case we want to map
-        our data model to an actual object.
-        """
-        self._obj_factory.register(class_name, constructor)
-
-    def get_object(self, obj_id):
-        """From id, return concrete object if any"""
-        return self._obj_factory.get(obj_id)
-
-    def update_object(self, obj_id, *prop_names):
-        """
-        Flush listed property names onto the concrete object.
-        Return true if something changed.
-        """
-        obj = self.get(obj_id)
-        obj_properties = obj.get("properties", {})
-        properties = obj_properties
-
-        if len(prop_names):
-            properties = {}
-            for name in prop_names:
-                properties[name] = obj_properties[name]
-
-        return self._push(obj_id, properties)
-
-    def _push(self, obj_id, properties):
-        """
-        Internal helper for pushing properly decorated property values
-        to its concrete representation.
-        """
-        obj_type = self.get(obj_id).get("type")
-        obj_def = self.get_definition(obj_type)
-        props_decorated = {}
-        for prop_name in properties:
-            if properties[prop_name] is None:
-                continue
-            prop_type = obj_def[prop_name].get("type", "string")
-            if prop_type == "object":
-                props_decorated[prop_name] = self.get_object(properties[prop_name])
-            else:
-                props_decorated[prop_name] = properties[prop_name]
-
-        return self._obj_factory.push(obj_id, props_decorated)
-
-    def refresh(self, obj_id, prop_name):
-        """Force domain exectution on given property"""
-        obj = self.get(obj_id)
-
-        if obj is None:
-            return False
-
-        obj_def = self.get_definition(obj["type"])
-
-        __init_def = obj_def[prop_name]["initial"]
-        itype = __init_def.get("type", None)
-        if itype in constraints.__dict__:
-            if constraints.__dict__[itype].initial(
-                self, obj, prop_name, __init_def, obj_def
-            ):
-                obj["_user_edit"].discard(prop_name)
-                if __init_def.get("refresh", False) == "auto":
-                    obj["_initial_refresh"].add(prop_name)
-                    obj["_initial_prop_dep"].add(__init_def.get("property"))
-
-                return True
-
-        return False
-
     # -------------------------------------------------------------------------
     # Event handling
     # -------------------------------------------------------------------------
 
+    def _life_cycle(self, cycle, **kwargs):
+        for listener in self._behavior_add_on:
+            getattr(listener, cycle)(**kwargs)
+
+    def add_decorator(self, decorator: ProxyManagerDecorator):
+        decorator.set_proxymanager(self)
+        self._behavior_add_on.add(decorator)
+
+    def remove_decorator(self, decorator: ProxyManagerDecorator):
+        decorator.set_proxymanager(None)
+        self._behavior_add_on.discard(decorator)
+
     def _emit(self, topic, **kwargs):
-        for listener in self._listeners.values():
+        for listener in self._listeners:
             listener(topic, **kwargs)
 
-    def on_change(self, fn_callback):
+    def on(self, fn_callback):
         """
-        Register callback when something is changing in ObjectManager.
+        Register callback when something is changing in ProxyManager.
 
         fn(topic, **kwars)
         => topic='create' | ids=[]
         => topic='change' | ids=[]
         => topic='delete' | ids=[]
-
-        Return subscription ID
         """
-        self._listener_id += 1
-        subscription_id = self._listener_id
-        self._listeners[subscription_id] = fn_callback
+        self._listeners.add(fn_callback)
 
-        return subscription_id
-
-    def off(self, subscription):
+    def off(self, fn_callback):
         """
-        Unregister subscription using its ID
+        Unregister attached function/method
         """
-        if subscription in self._listeners:
-            del self._listeners[subscription]
+        self._listeners.discard(fn_callback)
 
     # -------------------------------------------------------------------------
     # Definition handling
@@ -306,8 +648,10 @@ class ObjectManager:
 
         if yaml_content:
             add_on_dict = yaml.safe_load(yaml_content)
+            self._life_cycle("before_load_model", definition=add_on_dict)
             self._model_definition.update(add_on_dict)
             self._apply_mixin(*add_on_dict.keys())
+            self._life_cycle("after_load_model", definition=yaml_content)
             return True
 
         return False
@@ -322,152 +666,88 @@ class ObjectManager:
         return self._model_definition.keys()
 
     # -------------------------------------------------------------------------
-    # Object management
+    # Proxy management
     # -------------------------------------------------------------------------
 
-    def create(self, object_type, **initial_values):
+    def create(self, proxy_type, **initial_values):
         """
-        Create a new instance of a data-object using an object_type along with
+        Create a new instance of a proxy using an proxy_type along with
         maybe a set of property values that we want to pre-initialise using the
         **kwargs approach.
         """
-        _id = self._next_id()
-        _type = object_type
-        _mtime = self.modified()
-        _properties = {}
-        _pending_init = []
-        _obj_props = []
-        _obj_deps = []
-        _tags = []
-        _initial_prop_dep = set()
-        _initial_refresh = set()
-
-        obj_out = {
-            # public keys
-            "id": _id,
-            "tags": _tags,
-            "type": _type,
-            "mtime": _mtime,
-            "properties": _properties,
-            # helper for fast indexing
-            "_pending_init": _pending_init,
-            "_obj_props": _obj_props,
-            "_obj_deps": _obj_deps,
-            "_user_edit": set(),
-            "_initial_prop_dep": _initial_prop_dep,
-            "_initial_refresh": _initial_refresh,
-        }
 
         # Can't create object if no definition available
-        if object_type not in self._model_definition:
+        if proxy_type not in self._model_definition:
             raise ValueError(
-                f"Object of type: {object_type} was not found in our loaded model definitions"
+                f"Object of type: {proxy_type} was not found in our loaded model definitions"
             )
 
-        # Get Object Definition
-        obj_def = self.get_definition(object_type)
+        self._life_cycle(
+            "proxy_create_before", proxy_type=proxy_type, initial_values=initial_values
+        )
+        obj = self._obj_factory.create(proxy_type) if self._obj_factory else None
+        proxy = Proxy(self, proxy_type, obj, **initial_values)
+        self._life_cycle(
+            "proxy_create_before_commit",
+            proxy_type=proxy_type,
+            initial_values=initial_values,
+            proxy=proxy,
+        )
 
-        # Create concrete object if possible
-        self._obj_factory.create(_id, _type)
+        self._emit("create", ids=[proxy.id])
+        proxy.commit()
+        self._life_cycle(
+            "proxy_create_after_commit",
+            proxy_type=proxy_type,
+            initial_values=initial_values,
+            proxy=proxy,
+        )
 
-        # Add tags
-        _tags.extend(obj_def.get("_tags", []))
-        _tags.extend(initial_values.get("_tags", []))
+        return proxy
 
-        # Add name if any was provided
-        if "_name" in initial_values:
-            obj_out["name"] = initial_values["_name"]
-
-        # Register ourself
-        self._object_map[_id] = obj_out
-        for tag in _tags:
-            if tag not in self._tag_map:
-                self._tag_map[tag] = set()
-            self._tag_map[tag].add(_id)
-
-        for prop in obj_def:
-            # Skip private/internal keys
-            if prop[0] == "_":
-                continue
-            _properties[prop] = None
-
-            # Index property object ref
-            if obj_def[prop]["type"] == "object":
-                _obj_props.append(prop)
-
-            # Register domain initialization prop dependency
-            if "initial" in obj_def[prop]:
-                __init_def = obj_def[prop]["initial"]
-                if isinstance(__init_def, dict) and __init_def.get("refresh", False):
-                    if __init_def.get("refresh") == "auto":
-                        _initial_prop_dep.add(__init_def.get("property"))
-                        obj_out["_initial_refresh"].add(prop)
-
-            # Initial value override
-            if prop in initial_values:
-                _properties[prop] = initial_values[prop]
-                # Convert simput obj into its ID
-                if isinstance(_properties[prop], dict):
-                    _properties[prop] = _properties[prop].get("id", None)
-            elif "initial" in obj_def[prop]:
-                _pending_init.append(prop)
-
-        # Initialize values using constraints
-        while self._apply_initial(obj_out):
-            pass
-
-        # Push/Fetch any initial properties from concrete object
-        self._push(_id, _properties)
-        self._obj_factory.pull(_id, _properties)
-
-        # Try to initialize any values in case it is now possible
-        need_extra_push = False
-        while self._apply_initial(obj_out):
-            need_extra_push = True
-
-        if need_extra_push:
-            self._push(_id, _properties)
-
-        self._emit("create", ids=[_id])
-
-        return obj_out
-
-    def delete(self, object_id, trigger_modified=True):
+    def delete(self, proxy_id, trigger_modified=True):
         """
         Delete object along with its dependency that it is owner of
         """
-        before_delete = set(self._object_map.keys())
+        self._life_cycle(
+            "proxy_delete_before", proxy_id=proxy_id, trigger_modified=trigger_modified
+        )
+        before_delete = set(self._id_map.keys())
         # Delete ourself
-        obj_to_delete = self._object_map[object_id]
-        del self._object_map[object_id]
-        for tag in obj_to_delete.get("tags"):
-            self._tag_map.remove(object_id)
-        self._obj_factory.delete(object_id)
+        proxy_to_delete: Proxy = self._id_map[proxy_id]
+        del self._id_map[proxy_id]
+        for tag in proxy_to_delete.tags:
+            self._tag_map.get(tag).discard(proxy_id)
+
+        self._life_cycle(
+            "proxy_delete_after_self",
+            proxy_id=proxy_id,
+            trigger_modified=trigger_modified,
+            proxy=proxy_to_delete,
+        )
 
         # Delete objects that we own
-        for dep_id in obj_to_delete["_obj_deps"]:
-            self.delete(dep_id, False)
+        for _id in proxy_to_delete.own:
+            self.delete(_id, False)
+
+        self._life_cycle(
+            "proxy_delete_after_own",
+            proxy_id=proxy_id,
+            trigger_modified=trigger_modified,
+            proxy=proxy_to_delete,
+        )
 
         if trigger_modified:
-            after_delete = set(self._object_map.keys())
+            after_delete = set(self._id_map.keys())
             self.modified()
             self._emit("delete", ids=list(before_delete.difference(after_delete)))
 
-    def get(self, object_id):
+    def get(self, proxy_id: str) -> Proxy:
         """
-        object = {
-            id: 2143,
-            name: "", // <= optional
-            tags: [],
-            type: Plane
-            mtime: 94747,
-            properties: {
-                Origin: [0, 0, 0],
-                Normal: [1, 0, 0],
-            },
-        }
+        return proxy instance
         """
-        return self._object_map[object_id] if object_id in self._object_map else None
+        ic(proxy_id)
+        return self._id_map.get(proxy_id, None)
 
     def update(self, change_set):
         """
@@ -476,45 +756,35 @@ class ObjectManager:
             ...
         ]
         """
-        mtime = self.modified()
+        self._life_cycle("proxy_update_before", change_set=change_set)
         dirty_ids = set()
-        __flush_initialize = set()
         for change in change_set:
-            obj_id = change["id"]
-            prop = change["name"]
-            value = change["value"]
-            dirty_ids.add(obj_id)
-            obj = self.get(obj_id)
-            obj["properties"][prop] = value
-            obj["mtime"] = mtime
-            obj["_user_edit"].add(prop)
-            obj["_initial_refresh"].discard(prop)
-            if prop in obj["_initial_prop_dep"]:
-                __flush_initialize.add(obj_id)
+            _id = change["id"]
+            _name = change["name"]
+            _value = change["value"]
+            dirty_ids.add(_id)
+            proxy: Proxy = self.get(_id)
+            proxy.set_property(_name, _value)
 
-        for __id in __flush_initialize:
-            self._apply_initial(self.get(__id))
-
-        for dirty_id in dirty_ids:
-            props = self.get(dirty_id).get("properties")
-            self._push(dirty_id, props)
-
+        self._life_cycle(
+            "proxy_update_after", change_set=change_set, dirty_ids=dirty_ids
+        )
         self._emit("change", ids=list(dirty_ids))
 
-    def get_type(self, obj_type):
+    def get_instances_of_type(self, proxy_type):
         """
         Return all the instances of the given type
         """
         result = []
-        for obj in self._object_map.values():
-            if obj["type"] == obj_type:
-                result.append(obj)
+        for proxy in self._id_map.values():
+            if proxy.type == proxy_type:
+                result.append(proxy)
 
         return result
 
     def tags(self, *args):
         """List all instances containing all the listed tags"""
-        selected_ids = set(self._object_map.keys())
+        selected_ids = set(self._id_map.keys())
         for tag in args:
             if tag in self._tag_map:
                 selected_ids &= self._tag_map[tag]
@@ -523,12 +793,12 @@ class ObjectManager:
 
         result = []
         for obj_id in selected_ids:
-            result.append(self._object_map[obj_id])
+            result.append(self._id_map[obj_id])
 
         return result
 
     def types(self, *with_tags):
-        """List object_types from definition that has the set of provided tags"""
+        """List proxy_types from definition that has the set of provided tags"""
         result = []
         tag_filter = set(with_tags)
         for type_name in self._model_definition.keys():
@@ -544,10 +814,12 @@ class ObjectManager:
 
     def save(self, file_output=None):
         """Export state (definition+data) into a file"""
+        self._life_cycle("export_before", file_output=file_output)
         data = {
             "model": self._model_definition,
-            "objects": self._object_map,
+            "proxies": [proxy.state for proxy in self._id_map.values()],
         }
+        self._life_cycle("export_after", file_output=file_output, data=data)
         if file_output:
             with open(file_output, "w") as outfile:
                 json.dump(data, outfile)
@@ -556,85 +828,92 @@ class ObjectManager:
 
     def load(self, file_input=None, file_content=None):
         """Load previously exported state from a file"""
+        self._life_cycle(
+            "import_before", file_input=file_input, file_content=file_content
+        )
         if file_input:
             with open(file_input) as json_file:
                 data = json.load(json_file)
         else:
             data = json.loads(file_content)
 
+        self._life_cycle(
+            "import_before_processing",
+            file_input=file_input,
+            file_content=file_content,
+            data=data,
+        )
+
         self._model_definition.update(data["model"])
 
-        # Remap objects to new ids
+        # Create proxies
         _id_remap = {}
         _new_ids = []
-        _old_objects = data["objects"]
-        for old_id in _old_objects:
-            obj = _old_objects[old_id]
-            new_id = self._next_id()
-            obj["id"] = new_id
+        for proxy_state in data["proxies"]:
+            _id = proxy_state["id"]
+            _type = proxy_state["type"]
+            _proxy = self.create(_type)
+            _id_remap[_id] = _proxy.id
+            _proxy.update_from_state(proxy_state)
+            _new_ids.append(_proxy.id)
 
-            _new_ids.append(new_id)
-            _id_remap[old_id] = new_id
-            self._object_map[new_id] = obj
+        # Remap ids
+        for new_id in _new_ids:
+            _proxy = self.get(new_id)
+            _proxy.remap_ids(_id_remap)
+            _proxy.commit()
 
-        # Remap object property to new ids
-        for obj_id in _new_ids:
-            obj = self.get(obj_id)
-            for prop in obj["_obj_props"]:
-                obj[prop] = _id_remap[obj[prop]]
-            new_deps = []
-            for old_id in obj["_obj_deps"]:
-                new_deps = _id_remap[old_id]
-            obj["_obj_deps"] = new_deps
-
-        # Remap tags
-        for obj_id in _new_ids:
-            obj = self.get(obj_id)
-            for tag in obj.get("tags", []):
-                if tag not in self._tag_map:
-                    self._tag_map[tag] = set()
-                self._tag_map[tag].add(obj_id)
-
-        # Remap concreate objects
-        for obj_id in _new_ids:
-            obj = self.get(obj_id)
-            vtk_obj = self._obj_factory.create(obj_id, obj.get("type"))
-            # print("create", obj.get("type"), obj_id, vtk_obj)
-            self._push(obj_id, obj.get("properties"))
-
+        self._life_cycle(
+            "import_after",
+            file_input=file_input,
+            file_content=file_content,
+            data=data,
+            new_ids=_new_ids,
+            id_remap=_id_remap,
+        )
         self._emit("create", ids=_new_ids)
 
+    # -------------------------------------------------------------------------
+    # Commit / Reset
+    # -------------------------------------------------------------------------
 
-###############################################################################
+    def commit_all(self):
+        for _id in list(self.dirty_ids):
+            self.get(_id).commit()
+
+    def reset_all(self):
+        for _id in list(self.dirty_ids):
+            self.get(_id).reset()
 
 
+# ----------------------------------------------------------------------------
+# UIManager
+# ----------------------------------------------------------------------------
+# A UIManager is responsible to map a UI to proxy properties with the help
+# of a resolver which will specialized the target environment (Qt, Web)
+# ----------------------------------------------------------------------------
 class UIManager:
     """UI Manager provide UI information to edit and input object properties"""
 
     id_generator = create_id_generator()
 
-    def __init__(self, obj_manager, ui_resolver):
-        self._manager_id = next(UIManager.id_generator)
-        self._obj_manager = obj_manager
+    def __init__(self, proxymanager, ui_resolver):
+        self._id = next(UIManager.id_generator)
+        self._pxm = proxymanager
         self._ui_resolver = ui_resolver
         self._ui_xml = {}
         self._ui_lang = {}
         self._ui_resolved = {}
         # event handling
-        self._listeners = {}
-        self._listener_id = 1
+        self._listeners = set()
 
     @property
     def id(self):
-        return f"{self._obj_manager.id}:{self._manager_id}"
-
-    def _build_ui(self):
-        pass
+        return f"{self._pxm.id}:{self._id}"
 
     @property
-    def object_manager(self):
-        """Return linked object manager"""
-        return self._obj_manager
+    def proxymanager(self):
+        return self._pxm
 
     def clear_ui(self):
         """Clear any loaded UI definition"""
@@ -657,7 +936,7 @@ class UIManager:
 
         if yaml_content:
             self._ui_lang.update(yaml.safe_load(yaml_content))
-            auto_ui = extract_ui(yaml_content)
+            auto_ui = ui.extract_ui(yaml_content)
             self._ui_resolved = {}
             ui_change_count = 0
             for ui_type in auto_ui:
@@ -701,10 +980,10 @@ class UIManager:
     # -------------------------------------------------------------------------
 
     def _emit(self, topic, **kwargs):
-        for listener in self._listeners.values():
+        for listener in self._listeners:
             listener(topic, **kwargs)
 
-    def on_change(self, fn_callback):
+    def on(self, fn_callback):
         """
         Register callback when something is changing in ObjectManager.
 
@@ -712,100 +991,96 @@ class UIManager:
         => topic='ui'
         => topic='lang'
         => topic='lang+ui'
-
-        Return subscription ID
         """
-        self._listener_id += 1
-        subscription_id = self._listener_id
-        self._listeners[subscription_id] = fn_callback
+        self._listeners.add(fn_callback)
 
-        return subscription_id
-
-    def off(self, subscription):
+    def off(self, fn_callback):
         """
-        Unregister subscription using its ID
+        Unregister callback
         """
-        if subscription in self._listeners:
-            del self._listeners[subscription]
+        self._listeners.discard(fn_callback)
 
     # -------------------------------------------------------------------------
     # UI handling
     # -------------------------------------------------------------------------
 
-    def data(self, object_id):
-        """Return object model with property values (private keys stripped off)"""
-        _src = self._obj_manager.get(object_id)
-        _dst = {}
-        _dst.update(_src)
-        for key in _src:
-            if key[0] == "_":
-                del _dst[key]
+    def data(self, proxy_id):
+        """Return proxy state"""
+        _proxy = self._pxm.get(proxy_id)
+        if _proxy:
+            return _proxy.state
 
-        return _dst
+        print("No proxy with ID", proxy_id)
+        return None
 
-    def constraints(self, object_id):
+    def constraints(self, proxy_id):
         """Return hints for applying constraints locally"""
         result = {}
-        obj = self._obj_manager.get(object_id)
-        obj_def = self._obj_manager.get_definition(obj["type"])
-        for prop_name, prop_def in obj_def.items():
-            if "constraints" in prop_def:
-                container = {}
-                result[prop_name] = container
-                for constraint in prop_def["constraints"]:
-                    key = (
-                        constraint["name"]
-                        if "name" in constraint
-                        else constraint["type"]
-                    )
-                    value = constraints.is_valid(
-                        self._obj_manager,
-                        obj,
-                        prop_name,
-                        constraint,
-                        constraints=prop_def["constraints"],
-                    )
-                    available = constraints.available(
-                        self._obj_manager,
-                        obj,
-                        constraint,
-                        constraints=prop_def["constraints"],
-                    )
-                    container[key] = {
-                        "value": value,
-                        "available": available,
-                    }
+        ic("constraints", proxy_id)
+        # obj = self._obj_manager.get(proxy_id)
+        # obj_def = self._obj_manager.get_definition(obj["type"])
+        # for prop_name, prop_def in obj_def.items():
+        #     if "constraints" in prop_def:
+        #         container = {}
+        #         result[prop_name] = container
+        #         for constraint in prop_def["constraints"]:
+        #             key = (
+        #                 constraint["name"]
+        #                 if "name" in constraint
+        #                 else constraint["type"]
+        #             )
+        #             value = constraints.is_valid(
+        #                 self._obj_manager,
+        #                 obj,
+        #                 prop_name,
+        #                 constraint,
+        #                 constraints=prop_def["constraints"],
+        #             )
+        #             available = constraints.available(
+        #                 self._obj_manager,
+        #                 obj,
+        #                 constraint,
+        #                 constraints=prop_def["constraints"],
+        #             )
+        #             container[key] = {
+        #                 "value": value,
+        #                 "available": available,
+        #             }
 
         return result
 
-    def ui(self, object_type):
+    def ui(self, _type):
         """Return resolved layout"""
-        if object_type in self._ui_resolved:
-            return self._ui_resolved[object_type]
+        if _type in self._ui_resolved:
+            return self._ui_resolved[_type]
 
-        model_def = self._obj_manager.get_definition(object_type)
-        lang_def = self._ui_lang[object_type]
-        ui_def = self._ui_xml[object_type]
+        model_def = self._pxm.get_definition(_type)
+        lang_def = self._ui_lang[_type]
+        ui_def = self._ui_xml[_type]
         resolved = self._ui_resolver.resolve(model_def, lang_def, ui_def)
         resolved = resolved.decode("UTF-8")
-        self._ui_resolved[object_type] = resolved
+        self._ui_resolved[_type] = resolved
 
         return resolved
 
 
+# ----------------------------------------------------------------------------
+# ObjectFactory
+# ----------------------------------------------------------------------------
+# The ObjectFactory is responsible for the creation of concrete object that
+# a given proxy can control.
+# ----------------------------------------------------------------------------
 class ObjectFactory:
     """Concrete object helper"""
 
-    def __init__(self, _obj_manager):
-        self._obj_manager = _obj_manager
+    def __init__(self):
         self._map = {}
-        self._instances = {}
 
     def register(self, name, klass):
         """Register constructor to match definition type"""
         self._map[name] = klass
 
-    def create(self, obj_id, name, **kwargs):
+    def create(self, name, **kwargs):
         """Try to create concreate oject"""
         obj = None
         if name in self._map:
@@ -814,127 +1089,116 @@ class ObjectFactory:
         if name in globals():
             obj = globals()[name](**kwargs)
 
-        if obj:
-            self._instances[obj_id] = obj
-
         if obj is None:
             print("Could not instantiate", name)
 
         return obj
 
-    def delete(self, obj_id):
-        """Delete concrete object if available"""
-        if obj_id in self._instances:
-            del self._instances[obj_id]
 
-    def get(self, obj_id):
-        """Get concrete object from its ID"""
-        if obj_id in self._instances:
-            return self._instances[obj_id]
-        return None
+###############################################################################
+# Operators
+###############################################################################
 
-    def id(self, obj):
-        """
-        Find id of concreate object if it was previously registered.
-        -1 otherwise
-        """
-        for id, instance in self._instances.items():
-            if instance == obj:
-                return id
-        return "-1"
+# -----------------------------------------------------------------------------
+# Value validator
+# -----------------------------------------------------------------------------
+def is_valid_value(v):
+    if v is None:
+        return False
+    if isinstance(v, (str, bool, int, float)):
+        return True
+    if isinstance(v, (list, tuple)):
+        for item in v:
+            if not is_valid_value(item):
+                return False
+        return True
+    if isinstance(v, ObjectHelper):
+        return True
 
-    def push(self, obj_id, properties):
-        """
-        Given the properties, push them to the given object ID
-        """
-        obj = self.get(obj_id)
+    return False
 
-        if obj is None:
-            return False
 
-        obj_type = self._obj_manager.get(obj_id).get("type")
-        obj_def = self._obj_manager.get_definition(obj_type)
+# -----------------------------------------------------------------------------
+# Move proxy property onto the object the proxy is controlling
+# -----------------------------------------------------------------------------
+def push(proxy: Proxy):
+    obj_id = proxy.id
+    obj = proxy.object
+    obj_manager = proxy.manager
+    obj_def = proxy.definition
+    change_count = 0
 
-        # Wrong too VTK specific
-        before_mtime = obj.GetMTime()
-        change_detected = False
-        if obj:
-            for name in properties:
-                if "_set" in obj_def[name]:
-                    actions = obj_def[name]["_set"]
-                    if not isinstance(actions, list):
-                        actions = [actions]
-                    for action in actions:
-                        method_name = action.get("method", None)
-                        filter = action.get("filter", None)
-                        kwargs = action.get("kwargs", {})
-                        if filter:
-                            filters.__dict__[filter](
-                                self._obj_manager, obj_id, name, method_name, **kwargs
-                            )
-                        else:
-                            # print(f"{method_name}({kwargs})")
-                            getattr(obj, method_name)(**kwargs)
+    if hasattr(obj, "GetMTime"):
+        change_count = obj.GetMTime()
 
+    for name in proxy.edited_property_names:
+        value = proxy[name]
+        if isinstance(value, Proxy):
+            value = value.object
+
+        if "_set" in obj_def.get(name, ""):
+            # custom setter handling
+            actions = obj_def.get(name).get("_set")
+            for action in actions:
+                method_name = action.get("method", None)
+                filter = action.get("filter", None)
+                kwargs = action.get("kwargs", {})
+                if filter:
+                    filters.__dict__[filter](
+                        obj_manager, obj_id, name, method_name, **kwargs
+                    )
                 else:
-                    fn_name = f"Set{name}"
-                    if hasattr(obj, fn_name):
-                        fn = getattr(obj, fn_name)
-                        # print(f"{fn_name}({properties[name]})")
-                        fn(properties[name])
+                    getattr(obj, method_name)(**kwargs)
+        elif hasattr(obj, f"set{name}"):
+            fn = getattr(obj, f"set{name}")
+            if fn(value):
+                change_count += 1
+        elif hasattr(obj, f"Set{name}"):
+            fn = getattr(obj, f"Set{name}")
+            if fn(value):
+                change_count += 1
 
-                    fn_name = f"set{name}"
-                    if hasattr(obj, fn_name):
-                        fn = getattr(obj, fn_name)
-                        # print(f"{fn_name}({properties[name]})")
-                        fn(properties[name])
+    if hasattr(obj, "GetMTime"):
+        new_mtime = obj.GetMTime()
+        change_count = 1 if (change_count < new_mtime) else 0
 
-        # Wrong too VTK specific
-        after_mtime = obj.GetMTime()
-        change_detected = before_mtime != after_mtime
+    return change_count
 
-        return change_detected
 
-    def pull(self, obj_id, properties):
-        """Read values from concrete object and update the provided properties dict"""
-        obj = self.get(obj_id)
-        if obj is None:
-            return False, []
-
-        obj_type = self._obj_manager.get(obj_id).get("type")
-        obj_def = self._obj_manager.get_definition(obj_type)
-
+# -----------------------------------------------------------------------------
+# Update properties by reading values from the object the proxy is controlling
+# -----------------------------------------------------------------------------
+def fetch(proxy: Proxy, names=[]):
+    if proxy:
+        obj = proxy.object
+        obj_def = proxy.definition
         props_updated = []
-        if obj:
-            for name in properties:
-                if "_get" in obj_def[name]:
-                    read_def = obj_def[name]["_get"]
-                    if read_def == "skip":
-                        pass
-                    elif read_def:
-                        print("Not sure how to handle read from custom method/filter")
-                        print(read_def)
-                        pass
-                elif "initial" in obj_def[name]:
-                    # We should not pull if initial is defined
-                    pass
+        for name in names:
+            prop_def = obj_def.get(name, {})
+            if "_get" in prop_def:
+                if prop_def.get("_get") == "skip":
+                    continue
                 else:
-                    known_value = properties[name]
-                    current_value = known_value
+                    print(prop_def)
+                    raise ValueError(
+                        "Not sure how to handle read from custom method/filter"
+                    )
+            elif "initial" in prop_def:
+                # We should not pull if initial is defined
+                continue
+            else:
+                known_value = proxy[name]
+                read_value = known_value
 
-                    fn_name = f"Get{name}"
+                for fn_name in [f"Get{name}", f"get{name}"]:
                     if hasattr(obj, fn_name):
                         fn = getattr(obj, fn_name)
-                        current_value = fn()
+                        read_value = fn()
+                        break
 
-                    fn_name = f"get{name}"
-                    if hasattr(obj, fn_name):
-                        fn = getattr(obj, fn_name)
-                        current_value = fn()
-
-                    if known_value != current_value and is_valid_value(current_value):
-                        props_updated.append(name)
-                        properties[name] = current_value
+                if known_value != read_value and is_valid_value(read_value):
+                    props_updated.append(name)
+                    proxy.set_property(name, read_value)
 
         change_detected = len(props_updated) > 0
         return change_detected, props_updated

@@ -3,6 +3,8 @@ import os
 from wslink import register as exportRpc
 from wslink.websocket import LinkProtocol
 
+import json
+
 serve_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "serve"))
 
 # -----------------------------------------------------------------------------
@@ -52,14 +54,12 @@ class SimputHelper:
         self._app.change(self.auto_key)(self._update_auto)
 
         # Monitor ui change
-        self.subscription_ui = self._ui_manager.on_change(self._ui_change)
-        self.subscription_data = self._ui_manager.object_manager.on_change(
-            self._data_change
-        )
+        self._ui_manager.on(self._ui_change)
+        self._ui_manager.proxymanager.on(self._data_change)
 
     def __del__(self):
-        self._ui_manager.off(self.subscription_ui)
-        self._ui_manager.off(self.subscription_data)
+        self._ui_manager.off(self._ui_change)
+        self._ui_manager.proxymanager.off(self._data_change)
 
     @property
     def changeset(self):
@@ -77,7 +77,7 @@ class SimputHelper:
         return change_set
 
     def apply(self):
-        self._ui_manager.object_manager.update(self.changeset)
+        self._ui_manager.proxymanager.update(self.changeset)
         self.reset()
 
     def reset(self):
@@ -91,14 +91,15 @@ class SimputHelper:
             self.push(id=_id)
 
     def refresh(self, id=0, property=""):
-        if self._ui_manager.object_manager.refresh(id, property):
-            _props = self._ui_manager.object_manager.get(id).get("properties", {})
-            _prop_to_push = {property: _props[property]}
-            self._ui_manager.object_manager._push(id, _prop_to_push)
-            self._ui_manager.object_manager._emit("change", ids=[id])
-            self._app.protocol_call(
-                "simput.push", self._ui_manager.id, id=id, type=None
-            )
+        print("refresh not implemented...")
+        # if self._ui_manager.proxymanager.refresh(id, property):
+        #     _props = self._ui_manager.proxymanager.get(id).get("properties", {})
+        #     _prop_to_push = {property: _props[property]}
+        #     self._ui_manager.proxymanager._push(id, _prop_to_push)
+        #     self._ui_manager.proxymanager._emit("change", ids=[id])
+        #     self._app.protocol_call(
+        #         "simput.push", self._ui_manager.id, id=id, type=None
+        #     )
 
     def push(self, id=None, type=None):
         self._app.protocol_call("simput.push", self._ui_manager.id, id=id, type=type)
@@ -161,20 +162,19 @@ class SimputProtocol(LinkProtocol):
             print(f"No manager found for id {manager_id}")
             return
 
+        uim = handler.get("uim")
+        domains = handler.get("domains", None)
+
         message = {"id": id, "type": type}
         if id is not None:
-            message.update(
-                {
-                    "data": handler.data(id),
-                    "constraints": handler.constraints(id),
-                }
-            )
+            message.update({"data": uim.data(id)})
+            if domains:
+                message.update({"constraints": domains.constraints(id)})
+
         if type is not None:
-            message.update(
-                {
-                    "ui": handler.ui(type),
-                }
-            )
+            message.update({"ui": uim.ui(type)})
+
+        print(json.dumps(message, indent=2))
 
         self.publish("simput.push", message)
 
@@ -203,11 +203,11 @@ def setup(app, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def register_manager(manager):
+def register_manager(manager, domains=None):
     global MANAGERS
-    MANAGERS[manager.id] = manager
+    MANAGERS[manager.id] = {"uim": manager, "domains": domains}
 
 
-def create_helper(manager, namespace="simput"):
-    register_manager(manager)
+def create_helper(manager, namespace="simput", domains=None):
+    register_manager(manager, domains)
     return SimputHelper(APP, manager, namespace)
