@@ -1,5 +1,5 @@
 # types: string, object, bool, int[8,16,32,64], uint[8,16,32,64], float[32,64]
-# constraints: Range, Bigger, Smaller, LabelList, PropertyList
+# domains: Range, Bigger, Smaller, LabelList, PropertyList
 Person:
   _label: Personal Informations
   _help: |
@@ -20,7 +20,7 @@ Person:
     initial:
       - No where to be found
       -
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: vertical
@@ -31,7 +31,7 @@ Person:
     _label: State
     type: string
     initial: N/A
-    constraints:
+    domains:
       - type: LabelList
         values:
           - text: Alabama
@@ -90,10 +90,10 @@ Person:
             value: NE
           - text: Nevada
             value: NV
-          - text: New
-            value: Ha
-          - text: New
-            value: Je
+          - text: New Hampshire
+            value: NH
+          - text: New Jersey
+            value: NJ
           - text: New Mexico
             value: NM
           - text: New York
@@ -141,18 +141,3 @@ Person:
     type: uint64
   Country:
     type: string
-
-Agenda:
-  Contacts:
-    _label: List of contacts
-    size: -1
-    type: object
-    constraints:
-      - type: IsA
-        klass: Person
-  Active:
-    _label: Active contact
-    type: object
-    constraints:
-      - type: PropertyList
-        property: Contacts

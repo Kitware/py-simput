@@ -27,36 +27,38 @@ class VuetifyResolver:
         if elem.tag in VUETIFY_MAP:
             return VUETIFY_MAP[elem.tag], attributes
         elif elem.tag == "input":
-            constraints = self._model[elem.get("name")].get("constraints", [])
+            domains = self._model[elem.get("name")].get("domains", [])
             widget = "sw-text-field"
-            for constraint in constraints:
-                ctype = constraint.get("type")
+            for domain in domains:
+                ctype = domain.get("type")
+                level = domain.get("level", 0)
                 if (
                     ctype == "LabelList"
                     or ctype == "PropertyList"
                     or ctype == "FieldSelector"
-                    or ctype == "ObjectBuilder"
+                    or ctype == "ProxyBuilder"
                     or ctype == "HasTags"
                 ):
-                    values = constraint.get("values", [])
-                    prop_name = constraint.get("property", None)
-                    if len(values) and ctype != "HasTags":
+                    values = domain.get("values", [])
+                    prop_name = domain.get("property", None)
+                    if len(values) and ctype not in ["HasTags", "ProxyBuilder"]:
                         attributes[":items"] = values
+
                     if prop_name and ctype != "FieldSelector":
                         attributes["itemsProperty"] = prop_name
                     widget = "sw-select"
                 if ctype == "Boolean":
                     widget = "sw-switch"
-                if ctype == "Range":
-                    value_range = constraint.get("value_range", None)
+                if ctype == "Range" and level == 2:
+                    value_range = domain.get("value_range", None)
                     if value_range:
                         attributes[":min"] = value_range[0]
                         attributes[":max"] = value_range[1]
                     widget = "sw-slider"
 
                 if ctype == "UI":
-                    attributes.update(constraint.get("properties", {}))
-                    custom_widget = constraint.get("widget", None)
+                    attributes.update(domain.get("properties", {}))
+                    custom_widget = domain.get("widget", None)
                     if custom_widget and custom_widget in WIDGET_MAP:
                         widget = WIDGET_MAP[custom_widget]
 
@@ -67,15 +69,13 @@ class VuetifyResolver:
                 widget = "sw-switch"
 
             return widget, attributes
-        elif elem.tag == "object":
-            return "sw-object", attributes
+        elif elem.tag == "proxy":
+            return "sw-proxy", attributes
 
         print(f"No mapping for {elem.tag}")
         return elem.tag, attributes
 
     def process_node(self, in_elem):
-        # print("process_node", in_elem.tag)
-
         # xml mapping
         key = in_elem.get("name")
         elem_lan = None

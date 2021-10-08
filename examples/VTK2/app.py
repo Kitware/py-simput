@@ -1,6 +1,13 @@
-import asyncio
 from pywebvue import App
-from simput.core import ObjectManager, UIManager
+from simput.core import (
+    ProxyManager,
+    UIManager,
+    ObjectFactory,
+    ProxyDomainManager,
+    fetch,
+)
+from simput.domains import register_domains
+from simput.values import register_values
 from simput.ui.web import VuetifyResolver
 from simput.pywebvue.modules import SimPut
 from pywebvue.modules import VTK
@@ -48,30 +55,37 @@ app.enableModule(VTK)
 # SimPut initialization
 # -----------------------------------------------------------------------------
 
-obj_manager = ObjectManager()
-ui_resolver = VuetifyResolver()
-ui_manager = UIManager(obj_manager, ui_resolver)
+# For VTK object creation
+vtk_factory = ObjectFactory()
+vtk_factory.register("Cone", vtkConeSource)
+vtk_factory.register("Sphere", vtkSphereSource)
+vtk_factory.register("Diskout", Diskout)
+vtk_factory.register("Representation", Representation)
+vtk_factory.register("vtkContourFilter", vtkContourFilter)
+vtk_factory.register("vtkClipDataSet", vtkClipDataSet)
+vtk_factory.register("vtkPlane", vtkPlane)
 
-obj_manager.load_model(yaml_content=app.txt("./model.yaml"))
+# Automatically create proxy from definition
+register_domains()
+register_values()
+
+pxm = ProxyManager(vtk_factory)
+ui_manager = UIManager(pxm, VuetifyResolver())
+pdm = ProxyDomainManager()
+
+pxm.add_life_cycle_listener(pdm)
+pxm.load_model(yaml_content=app.txt("./model.yaml"))
+
 ui_manager.load_language(yaml_content=app.txt("./model.yaml"))
 ui_manager.load_ui(xml_content=app.txt("./ui.xml"))
 
-# For VTK object creation
-obj_manager.register_construtor("Cone", vtkConeSource)
-obj_manager.register_construtor("Sphere", vtkSphereSource)
-obj_manager.register_construtor("Diskout", Diskout)
-obj_manager.register_construtor("Representation", Representation)
-obj_manager.register_construtor("vtkContourFilter", vtkContourFilter)
-obj_manager.register_construtor("vtkClipDataSet", vtkClipDataSet)
-obj_manager.register_construtor("vtkPlane", vtkPlane)
-
 # Setup network handlers + state properties
-simput = SimPut.create_helper(ui_manager)
+simput = SimPut.create_helper(ui_manager, pdm)
 simput.auto_update = True
 
 # Fill drop down with available objects
-app.set("sourceTypes", obj_manager.types("Source"))
-app.set("filterTypes", obj_manager.types("Filter"))
+app.set("sourceTypes", pxm.types("Source"))
+app.set("filterTypes", pxm.types("Filter"))
 
 # -----------------------------------------------------------------------------
 # VTK management
@@ -87,10 +101,10 @@ Representation.setView(view)
 
 
 def update_sources(*args, **kwargs):
-    sources = obj_manager.tags("Source")
-    filters = obj_manager.tags("Filter")
-    sources_ids = list(map(lambda p: p.get("id"), sources))
-    filters_ids = list(map(lambda p: p.get("id"), filters))
+    sources = pxm.tags("Source")
+    filters = pxm.tags("Filter")
+    sources_ids = list(map(lambda p: p.id, sources))
+    filters_ids = list(map(lambda p: p.id, filters))
     app.set("sourceIds", sources_ids + filters_ids)
 
 
@@ -107,8 +121,10 @@ def update_view(*args, **kwargs):
 
 @app.trigger("create")
 def create_object(name, type):
-    obj = obj_manager.create(type, _name=name)
-    app.set("activeSourceId", obj.get("id"))
+    obj = pxm.create(type, _name=name)
+    fetch(obj, fetch_all=True)
+    pdm.apply_all()
+    app.set("activeSourceId", obj.id)
 
 
 # -----------------------------------------------------------------------------
@@ -118,10 +134,10 @@ def create_object(name, type):
 def create_filter(name, type):
     input = app.get("activeSourceId")
     if input:
-        print("create filter with input - begin", input)
-        filter = obj_manager.create(type, _name=name, Input=input)
-        print("create filter with input - end", filter)
-        app.set("activeSourceId", filter.get("id"))
+        filter = pxm.create(type, _name=name, Input=input)
+        fetch(filter, fetch_all=True)
+        pdm.apply_all()
+        app.set("activeSourceId", filter.id)
 
 
 # -----------------------------------------------------------------------------
@@ -130,7 +146,7 @@ def create_filter(name, type):
 @app.trigger("delete")
 def delete_object(obj_id):
     active_id = app.get("activeSourceId")
-    obj_manager.delete(obj_id)
+    pxm.delete(obj_id)
     if active_id == obj_id:
         app.set("activeSourceId", None)
 
@@ -152,10 +168,10 @@ def on_ready():
 @app.change("activeSourceId")
 def update_active_representation():
     src_id = app.get("activeSourceId")
-    rep_id = None
+    rep = None
     if src_id:
-        rep_id = obj_manager.get(src_id).get("properties").get("Representation")
-    app.set("activeRepresentationId", rep_id)
+        rep = pxm.get(src_id)["Representation"]
+    app.set("activeRepresentationId", rep.id)
 
 
 def on_change(topic, ids=None, **kwargs):
@@ -163,7 +179,7 @@ def on_change(topic, ids=None, **kwargs):
     update_view()
 
 
-obj_manager.on_change(on_change)
+pxm.on(on_change)
 
 # -----------------------------------------------------------------------------
 # Import / Export
@@ -175,7 +191,7 @@ def import_file():
     file_data = app.get("importFile")
     if file_data:
         json_content = file_data.get("content").decode("utf-8")
-        obj_manager.load(file_content=json_content)
+        pxm.load(file_content=json_content)
 
     # reset current import
     app.set("importFile", None)
@@ -186,7 +202,7 @@ def import_file():
 
 @app.trigger("export")
 def export_state():
-    app.set("exportContent", obj_manager.save())
+    app.set("exportContent", pxm.save())
 
 
 # -----------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 from pywebvue import App
-from simput.core import ObjectManager, UIManager
+from simput.core import ProxyManager, UIManager, ProxyDomainManager
+from simput.domains import register_domains
 from simput.ui.web import VuetifyResolver
 from simput.pywebvue.modules import SimPut
 
@@ -18,26 +19,30 @@ app.enableModule(SimPut)
 # SimPut initialization
 # -----------------------------------------------------------------------------
 
-obj_manager = ObjectManager()
-ui_resolver = VuetifyResolver()
-ui_manager = UIManager(obj_manager, ui_resolver)
+pxm = ProxyManager()
+ui_manager = UIManager(pxm, VuetifyResolver())
+domains_manager = ProxyDomainManager()
 
-obj_manager.load_model(yaml_content=app.txt("./model.yaml"))
+pxm.add_life_cycle_listener(domains_manager)
+pxm.load_model(yaml_content=app.txt("./model.yaml"))
+
 ui_manager.load_language(yaml_content=app.txt("./model.yaml"))
 ui_manager.load_ui(xml_content=app.txt("./ui.xml"))
 
 # Setup network handlers + state properties
-simput = SimPut.create_helper(ui_manager)
+simput = SimPut.create_helper(ui_manager, domains_manager)
+
+register_domains()
 
 # -----------------------------------------------------------------------------
 
-wavelet = obj_manager.create("Wavelet")
-cone = obj_manager.create("Cone")
-clip = obj_manager.create("Clip", Input=cone)
+wavelet = pxm.create("Wavelet")
+cone = pxm.create("Cone")
+clip = pxm.create("Clip", Input=cone)
 
-app.set("wavelet", wavelet.get("id"))
-app.set("cone", cone.get("id"))
-app.set("clip", clip.get("id"))
+app.set("wavelet", wavelet.id)
+app.set("cone", cone.id)
+app.set("clip", clip.id)
 
 # -----------------------------------------------------------------------------
 # Start server

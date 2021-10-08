@@ -67,7 +67,7 @@ export default {
     computedLayout() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.layout || this.constraints()[this.name]?.UI?.layout || 'vertical';
+      return this.layout || this.domains()[this.name]?.UI?.layout || 'vertical';
     },
     computedSize() {
       if (Number(this.size) !== 1) {
@@ -78,7 +78,7 @@ export default {
     computedSizeControl() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.sizeControl || this.constraints()[this.name]?.UI?.sizeControl;
+      return this.sizeControl || this.domains()[this.name]?.UI?.sizeControl;
     },
     rule() {
       return TYPES[this.type]?.rule || true;
@@ -87,43 +87,26 @@ export default {
       return TYPES[this.type]?.convert || FALLBACK_CONVERT;
     },
     computedMin() {
-      /* eslint-disable no-unused-expressions */
       if (this.min != null) {
         return this.min;
       }
-      const { property, constraint } = this.constraints()?.[this.name]?.Range?.available || {};
-      const selectedArray = this.properties()?.[property];
-      const arrays = this.constraints()?.[property]?.[constraint]?.available || [];
-      for (let i = 0; i < arrays.length; i++) {
-        const array = arrays[i];
-        if (array.value === selectedArray) {
-          console.log('Found array range', array.range);
-          return array.range[0];
-        }
-      }
 
-      console.log('range failed', this.constraints()[this.name]);
-      // TODO - FIXME use dynamic constraints
+      const dataRange = this.domains()?.[this.name]?.Range?.available;
+      if (dataRange) {
+        return dataRange[0];
+      }
       return 0;
     },
     computedMax() {
-      /* eslint-disable no-unused-expressions */
       if (this.max != null) {
         return this.max;
       }
 
-      const { property, constraint } = this.constraints()?.[this.name]?.Range?.available || {};
-      const selectedArray = this.properties()?.[property];
-      const arrays = this.constraints()?.[property]?.[constraint]?.available || [];
-      for (let i = 0; i < arrays.length; i++) {
-        const array = arrays[i];
-        if (array.value === selectedArray) {
-          console.log('Found array range', array.range);
-          return array.range[1];
-        }
+      const dataRange = this.domains()?.[this.name]?.Range?.available;
+      if (dataRange) {
+        return dataRange[1];
       }
 
-      // TODO - FIXME use dynamic constraints
       return 100;
     },
     computedStep() {
@@ -133,8 +116,37 @@ export default {
       const range = this.computedMax - this.computedMin;
       return range / this.numberOfSteps;
     },
+    hints() {
+      /* eslint-disable no-unused-expressions */
+      this.mtime; // force refresh
+      return this.domains()[this.name].hints || [];
+    },
   },
   methods: {
+    levelToType(level) {
+      switch (level) {
+        case 0:
+          return 'info';
+        case 1:
+          return 'warning';
+        case 2:
+          return 'error';
+        default:
+          return 'success';
+      }
+    },
+    levelToIcon(level) {
+      switch (level) {
+        case 0:
+          return 'mdi-information-outline';
+        case 1:
+          return 'mdi-alert-octagon-outline';
+        case 2:
+          return 'mdi-alert-outline';
+        default:
+          return 'mdi-brain';
+      }
+    },
     addEntry() {
       this.dynamicSize = this.model.length + 1;
       this.model.length = this.dynamicSize;
@@ -170,7 +182,6 @@ export default {
       return {};
     },
     update(component = 0) {
-      // console.log('update', component, this.size);
       const value = component ? this.model[component - 1] : this.model;
       // must test against bool since it can be a string in case of error
       if (this.rule(value) === true) {
@@ -200,5 +211,5 @@ export default {
       this.dirty(this.name);
     },
   },
-  inject: ['data', 'properties', 'constraints', 'dirty'],
+  inject: ['data', 'properties', 'domains', 'dirty'],
 };
