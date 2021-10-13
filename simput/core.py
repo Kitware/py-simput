@@ -365,6 +365,8 @@ class Proxy:
 
         # Update proxy props
         for prop_name, prop_def in self.definition.items():
+            if prop_name.startswith("_"):
+                continue
             if prop_def.get("type", "") == "proxy":
                 self._properties[prop_name] = id_map[self._properties[prop_name]]
 
