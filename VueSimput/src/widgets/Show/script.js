@@ -4,7 +4,7 @@ export default {
     property: {
       type: String,
     },
-    constrain: {
+    domain: {
       type: String,
     },
     mtime: {
@@ -14,13 +14,13 @@ export default {
   computed: {
     visible() {
       this.mtime; // eslint-disable-line
-      const constraint = this.constraints()?.[this.property]?.[this.constrain];
-      if (!constraint) {
-        // no constraint == valid
+      const domain = this.domains()?.[this.property]?.[this.domain];
+      if (!domain) {
+        // no domain == valid
         return true;
       }
-      return constraint.value;
+      return domain.value;
     },
   },
-  inject: ['properties', 'constraints'],
+  inject: ['properties', 'domains'],
 };

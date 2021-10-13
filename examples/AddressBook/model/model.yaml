@@ -1,5 +1,5 @@
 # types: string, object, bool, int[8,16,32,64], uint[8,16,32,64], float[32,64]
-# constraints: Range, Bigger, Smaller, LabelList, PropertyList
+# domains: Range, Bigger, Smaller, LabelList, PropertyList
 Person:
   _label: Personal Informations
   _help: |
@@ -20,7 +20,7 @@ Person:
     initial:
       - No where to be found
       -
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: vertical
@@ -31,7 +31,7 @@ Person:
     _label: State
     type: string
     initial: N/A
-    constraints:
+    domains:
       - type: LabelList
         values:
           - text: Alabama

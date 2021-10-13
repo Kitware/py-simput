@@ -1,4 +1,4 @@
-from simput.core import Proxy, Domain, ProxyManager, ProxyManagerDecorator
+from simput.core import Proxy, Domain, ProxyManager
 
 from icecream import ic
 
@@ -95,5 +95,7 @@ class IsEqual(Domain):
 # -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
-Domain.register("ProxyBuilder", ProxyBuilder)
-Domain.register("IsEqual", IsEqual)
+
+def register_domains():
+    Domain.register("ProxyBuilder", ProxyBuilder)
+    Domain.register("IsEqual", IsEqual)

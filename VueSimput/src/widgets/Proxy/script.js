@@ -17,5 +17,5 @@ export default {
       return this.properties()[this.name];
     },
   },
-  inject: ['data', 'properties', 'constraints', 'dirty'],
+  inject: ['data', 'properties', 'domains', 'dirty'],
 };

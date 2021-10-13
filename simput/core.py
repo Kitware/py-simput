@@ -394,7 +394,7 @@ class Domain:
             if name.startswith("_"):
                 continue
             _prop_domains = domains.setdefault(name, {})
-            for domain_def in definition[name].get("constraints", []):
+            for domain_def in definition[name].get("domains", []):
                 _type = domain_def.get("type")
                 _name = domain_def.get("name", _type)
                 if _type in Domain.__domain_availables:
@@ -486,12 +486,12 @@ class Domain:
         return []
 
 # -----------------------------------------------------------------------------
-# ProxyManagerDecorator
+# ProxyManagerLifeCycleListener
 # -----------------------------------------------------------------------------
 # Allow to decorate ProxyManager to extend default behavior by hooking to
 # life cycle calls.
 # -----------------------------------------------------------------------------
-class ProxyManagerDecorator:
+class ProxyManagerLifeCycleListener:
     def __init__(self):
         self._pxm = None
 
@@ -558,7 +558,7 @@ class ProxyManagerDecorator:
 # A proxy state can then be used to control a concrete object that can be
 # local or remote.
 # Proxies provide a nice infrastructure to map a UI to their state with
-# constraints and more.
+# domains and more.
 # The ProxyManager is responsible for keeping track of proxies lifecycle and
 # finding them from their Id or Tags.
 # -----------------------------------------------------------------------------
@@ -572,7 +572,7 @@ class ProxyManager:
 
         self._mtime = 1
         self._listeners = set()
-        self._behavior_add_on = set()
+        self._life_cycle_listeners = set()
         self._obj_factory = object_factory
 
         self._model_definition = {}
@@ -612,16 +612,16 @@ class ProxyManager:
     # -------------------------------------------------------------------------
 
     def _life_cycle(self, cycle, **kwargs):
-        for listener in self._behavior_add_on:
+        for listener in self._life_cycle_listeners:
             getattr(listener, cycle)(**kwargs)
 
-    def add_decorator(self, decorator: ProxyManagerDecorator):
-        decorator.set_proxymanager(self)
-        self._behavior_add_on.add(decorator)
+    def add_life_cycle_listener(self, listener: ProxyManagerLifeCycleListener):
+        listener.set_proxymanager(self)
+        self._life_cycle_listeners.add(listener)
 
-    def remove_decorator(self, decorator: ProxyManagerDecorator):
-        decorator.set_proxymanager(None)
-        self._behavior_add_on.discard(decorator)
+    def remove_life_cycle_listener(self, listener: ProxyManagerLifeCycleListener):
+        listener.set_proxymanager(None)
+        self._life_cycle_listeners.discard(listener)
 
     def _emit(self, topic, **kwargs):
         for listener in self._listeners:
@@ -1077,7 +1077,7 @@ class ObjectFactory:
 # additional informations to the client for error checking and listing
 # available values for drop down and else.
 # -----------------------------------------------------------------------------
-class DomainManager(ProxyManagerDecorator):
+class DomainManager(ProxyManagerLifeCycleListener):
     def __init__(self):
         self._id_map = {}
         self._dirty_ids = set()
@@ -1092,10 +1092,10 @@ class DomainManager(ProxyManagerDecorator):
         for _id in _ids:
             self._dirty_ids.add(_id)
 
-    def get_dirty_constraints(self):
+    def get_dirty_domains(self):
         messages = []
         for _id in self._dirty_ids:
-            msg = { "id": _id, "constraints": self.constraints(_id) }
+            msg = { "id": _id, "domains": self.domains(_id) }
             messages.append(msg)
         return messages
 
@@ -1107,7 +1107,15 @@ class DomainManager(ProxyManagerDecorator):
             return domain.available()
         return []
 
-    def constraints(self, _id):
+    def valid(self, _id, _prop_name, _domain_name):
+        domains = self._id_map.get(_id, {})
+        prop_domains = domains.get(_prop_name, {})
+        domain = prop_domains.get(_domain_name, None)
+        if domain:
+            return domain.valid()
+        return True # no domain == valid
+
+    def domains(self, _id):
         output = {}
         domains = self._id_map.get(_id, {})
         for prop_name, prop_domains in domains.items():
@@ -1132,20 +1140,6 @@ class DomainManager(ProxyManagerDecorator):
 
     def proxy_delete_before(self, proxy_id, trigger_modified, **kwargs):
         del self._id_map[proxy_id]
-
-    # def proxy_update_before(self, change_set, **kwargs):
-    #     for change in change_set:
-    #         _id = change["id"]
-    #         _name = change["name"]
-    #         _value = change["value"]
-    #         _domains = self._id_map.get(_id, None)
-    #         if _domains and _name in _domains:
-    #             _prop_domains = _domains[_name]
-    #             for _domain in _prop_domains:
-    #                 _value = _domain.validate(_value)
-
-    #             # Clean value from changeset
-    #             change["value"] = _value
 
 ###############################################################################
 # Operators

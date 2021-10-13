@@ -23,12 +23,28 @@ vue_use = ["VueSimput"]
 
 MANAGERS = {}
 
+def get_manager(_id, _type):
+    handler = MANAGERS.get(_id, None)
+    if handler is None:
+        print(f"No manager found for id {_id}")
+        return
+
+    return handler.get(_type)
+
+def get_ui_manager(_id):
+    return get_manager(_id, "ui_manager")
+
+
+def get_domains_manager(_id):
+    return get_manager(_id, "domains_manager")
+
+# -----------------------------------------------------------------------------
 
 class SimputHelper:
-    def __init__(self, app, ui_manager, namespace="simput", domain_manager=None):
+    def __init__(self, app, ui_manager, domains_manager=None, namespace="simput"):
         self._app = app
         self._ui_manager = ui_manager
-        self._domain_manager = domain_manager
+        self._domains_manager = domains_manager
         self._namespace = namespace
         self._pending_changeset = {}
         self._auto_update = False
@@ -95,7 +111,7 @@ class SimputHelper:
 
         # Go ahead and push changes
         for _id in ids_to_update:
-            self.push(id=_id, constraints=_id)
+            self.push(id=_id, domains=_id)
 
     def refresh(self, id=0, property=""):
         ic("refresh")
@@ -109,13 +125,13 @@ class SimputHelper:
         #         "simput.push", self._ui_manager.id, id=id, type=None
         #     )
 
-    def push(self, id=None, type=None, constraints=None):
+    def push(self, id=None, type=None, domains=None):
         if id:
             self._app.protocol_call("simput.data.get", self._ui_manager.id, id)
         if type:
             self._app.protocol_call("simput.ui.get", self._ui_manager.id, type)
-        if constraints:
-            self._app.protocol_call("simput.constraints.get", self._ui_manager.id, constraints)
+        if domains:
+            self._app.protocol_call("simput.domains.get", self._ui_manager.id, domains)
 
     def emit(self, topic, **kwargs):
         self._app.protocol_call("simput.push.event", topic, **kwargs)
@@ -137,10 +153,10 @@ class SimputHelper:
         self._app.set(self.changeset_key, self.changeset)
 
         self._ui_manager.proxymanager.update(change_set)
-        if self._domain_manager and self._domain_manager.has_dirty():
-            for msg in self._domain_manager.get_dirty_constraints():
+        if self._domains_manager and self._domains_manager.has_dirty():
+            for msg in self._domains_manager.get_dirty_domains():
                 self._app.protocol_call("simput.message.push", msg)
-            self._domain_manager.clear_dirty()
+            self._domains_manager.clear_dirty()
 
         if self._auto_update:
             self.apply()
@@ -177,13 +193,7 @@ class SimputHelper:
 class SimputProtocol(LinkProtocol):
     @exportRpc("simput.push")
     def push(self, manager_id, id=None, type=None):
-        handler = MANAGERS.get(manager_id, None)
-        if handler is None:
-            print(f"No manager found for id {manager_id}")
-            return
-
-        uim = handler.get("uim")
-
+        uim = get_ui_manager(manager_id)
         message = {"id": id, "type": type}
         if id is not None:
             message.update({"data": uim.data(id)})
@@ -198,12 +208,7 @@ class SimputProtocol(LinkProtocol):
     @exportRpc("simput.data.get")
     def get_data(self, manager_id, id):
         ic("get_data", id)
-        handler = MANAGERS.get(manager_id, None)
-        if handler is None:
-            print(f"No manager found for id {manager_id}")
-            return
-
-        uim = handler.get("uim")
+        uim = get_ui_manager(manager_id)
         msg = {"id": id, "data": uim.data(id)}
         self.send_message(msg)
         return msg
@@ -211,29 +216,19 @@ class SimputProtocol(LinkProtocol):
     @exportRpc("simput.ui.get")
     def get_ui(self, manager_id, type):
         ic("get_ui", type)
-        handler = MANAGERS.get(manager_id, None)
-        if handler is None:
-            print(f"No manager found for id {manager_id}")
-            return
-
-        uim = handler.get("uim")
+        uim = get_ui_manager(manager_id)
         msg = {"type": type, "ui": uim.ui(type)}
         self.send_message(msg)
         return msg
 
-    @exportRpc("simput.constraints.get")
-    def get_constraints(self, manager_id, id):
-        ic("get_constraints", id)
-        handler = MANAGERS.get(manager_id, None)
-        if handler is None:
-            print(f"No manager found for id {manager_id}")
-            return
+    @exportRpc("simput.domains.get")
+    def get_domains(self, manager_id, id):
+        ic("get_domains", id)
+        msg = {"id": id, "domains": {} }
 
-        msg = {"id": id, "constraints": {} }
-
-        domains = handler.get("domains", None)
-        if domains:
-            msg["constraints"] = domains.constraints(id)
+        domains_manager = get_domains_manager(manager_id)
+        if domains_manager:
+            msg["domains"] = domains_manager.domains(id)
 
         self.send_message(msg)
         return msg
@@ -273,11 +268,11 @@ def setup(app, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def register_manager(manager, domains=None):
+def register_manager(ui_manager, domains_manager=None):
     global MANAGERS
-    MANAGERS[manager.id] = {"uim": manager, "domains": domains}
+    MANAGERS[ui_manager.id] = {"ui_manager": ui_manager, "domains_manager": domains_manager}
 
 
-def create_helper(manager, namespace="simput", domains=None):
-    register_manager(manager, domains)
-    return SimputHelper(APP, manager, namespace, domain_manager=domains)
+def create_helper(ui_manager, domains_manager=None, namespace="simput",):
+    register_manager(ui_manager, domains_manager)
+    return SimputHelper(APP, ui_manager, namespace=namespace, domains_manager=domains_manager)

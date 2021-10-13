@@ -68,7 +68,7 @@ export default {
     computedLayout() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.layout || this.constraints()[this.name]?.UI?.layout || 'horizontal';
+      return this.layout || this.domains()[this.name]?.UI?.layout || 'horizontal';
     },
     computedSize() {
       if (Number(this.size) !== 1) {
@@ -79,7 +79,7 @@ export default {
     computedSizeControl() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.sizeControl || this.constraints()[this.name]?.UI?.sizeControl;
+      return this.sizeControl || this.domains()[this.name]?.UI?.sizeControl;
     },
     rule() {
       return TYPES[this.type]?.rule || (() => true);
@@ -175,5 +175,5 @@ export default {
       }
     },
   },
-  inject: ['data', 'properties', 'constraints', 'dirty', 'getSimput'],
+  inject: ['data', 'properties', 'domains', 'dirty', 'getSimput'],
 };

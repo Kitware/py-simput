@@ -67,7 +67,7 @@ export default {
     computedLayout() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.layout || this.constraints()[this.name]?.UI?.layout || 'vertical';
+      return this.layout || this.domains()[this.name]?.UI?.layout || 'vertical';
     },
     computedSize() {
       if (Number(this.size) !== 1) {
@@ -78,7 +78,7 @@ export default {
     computedSizeControl() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.sizeControl || this.constraints()[this.name]?.UI?.sizeControl;
+      return this.sizeControl || this.domains()[this.name]?.UI?.sizeControl;
     },
     rule() {
       return TYPES[this.type]?.rule || true;
@@ -91,19 +91,20 @@ export default {
       if (this.min != null) {
         return this.min;
       }
-      const { property, constraint } = this.constraints()?.[this.name]?.Range?.available || {};
-      const selectedArray = this.properties()?.[property];
-      const arrays = this.constraints()?.[property]?.[constraint]?.available || [];
-      for (let i = 0; i < arrays.length; i++) {
-        const array = arrays[i];
-        if (array.value === selectedArray) {
-          console.log('Found array range', array.range);
-          return array.range[0];
-        }
-      }
 
-      console.log('range failed', this.constraints()[this.name]);
-      // TODO - FIXME use dynamic constraints
+      // const { property, domain } = this.domains()?.[this.name]?.Range?.available || {};
+      // const selectedArray = this.properties()?.[property];
+      // const arrays = this.domains()?.[property]?.[domain]?.available || [];
+      // for (let i = 0; i < arrays.length; i++) {
+      //   const array = arrays[i];
+      //   if (array.value === selectedArray) {
+      //     console.log('Found array range', array.range);
+      //     return array.range[0];
+      //   }
+      // }
+
+      console.log('range failed', this.domains()[this.name]);
+      // TODO - FIXME use dynamic domains
       return 0;
     },
     computedMax() {
@@ -114,18 +115,18 @@ export default {
 
       // FIXME should always be dynamic...
 
-      const { property, constraint } = this.constraints()?.[this.name]?.Range?.available || {};
-      const selectedArray = this.properties()?.[property];
-      const arrays = this.constraints()?.[property]?.[constraint]?.available || [];
-      for (let i = 0; i < arrays.length; i++) {
-        const array = arrays[i];
-        if (array.value === selectedArray) {
-          console.log('Found array range', array.range);
-          return array.range[1];
-        }
-      }
+      // const { property, domain } = this.domains()?.[this.name]?.Range?.available || {};
+      // const selectedArray = this.properties()?.[property];
+      // const arrays = this.domains()?.[property]?.[domain]?.available || [];
+      // for (let i = 0; i < arrays.length; i++) {
+      //   const array = arrays[i];
+      //   if (array.value === selectedArray) {
+      //     console.log('Found array range', array.range);
+      //     return array.range[1];
+      //   }
+      // }
 
-      // Dynamic constraints
+      // Dynamic domains
 
       return 100;
     },
@@ -203,5 +204,5 @@ export default {
       this.dirty(this.name);
     },
   },
-  inject: ['data', 'properties', 'constraints', 'dirty'],
+  inject: ['data', 'properties', 'domains', 'dirty'],
 };

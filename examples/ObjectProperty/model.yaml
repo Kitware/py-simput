@@ -17,21 +17,21 @@ Cone:
   Height:
     type: float64
     size: 1
-    constraints:
+    domains:
       - type: Min
         value: 0
         exclude: true
   Radius:
     type: float64
     size: 1
-    constraints:
+    domains:
       - type: Min
         value: 0
         exclude: true
   Resolution:
     type: uint16
     size: 1
-    constraints:
+    domains:
       - type: Min
         value: 3
 
@@ -86,14 +86,14 @@ Clip:
   Input:
     type: proxy
     size: 1
-    constraints:
+    domains:
       - type: HasTags
         values:
           - Algorithm
   ClipFunction:
     type: proxy
     size: 1
-    constraints:
+    domains:
       - type: ProxyBuilder
         initial: Plane
         validator:
@@ -114,14 +114,14 @@ Clip:
     size: 1
     type: uint8
     initial: 0
-    constraints:
+    domains:
       - type: Boolean
   Scalars:
     size: 1
     type: string
     initial:
       type: FieldSelector
-    constraints:
+    domains:
       - type: FieldSelector
         property: Input
         port: 0
@@ -136,7 +136,7 @@ Clip:
     initial: 0
     #   type: MeanRange
     #   property: Scalars
-    # constraints:
+    # domains:
     #   - type: Range
     #     property: Scalars
 

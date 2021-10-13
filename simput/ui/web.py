@@ -28,10 +28,10 @@ class VuetifyResolver:
         if elem.tag in VUETIFY_MAP:
             return VUETIFY_MAP[elem.tag], attributes
         elif elem.tag == "input":
-            constraints = self._model[elem.get("name")].get("constraints", [])
+            domains = self._model[elem.get("name")].get("domains", [])
             widget = "sw-text-field"
-            for constraint in constraints:
-                ctype = constraint.get("type")
+            for domain in domains:
+                ctype = domain.get("type")
                 if (
                     ctype == "LabelList"
                     or ctype == "PropertyList"
@@ -39,8 +39,8 @@ class VuetifyResolver:
                     or ctype == "ProxyBuilder"
                     or ctype == "HasTags"
                 ):
-                    values = constraint.get("values", [])
-                    prop_name = constraint.get("property", None)
+                    values = domain.get("values", [])
+                    prop_name = domain.get("property", None)
                     if len(values) and ctype not in ["HasTags", "ProxyBuilder"]:
                         attributes[":items"] = values
 
@@ -50,15 +50,15 @@ class VuetifyResolver:
                 if ctype == "Boolean":
                     widget = "sw-switch"
                 if ctype == "Range":
-                    value_range = constraint.get("value_range", None)
+                    value_range = domain.get("value_range", None)
                     if value_range:
                         attributes[":min"] = value_range[0]
                         attributes[":max"] = value_range[1]
                     widget = "sw-slider"
 
                 if ctype == "UI":
-                    attributes.update(constraint.get("properties", {}))
-                    custom_widget = constraint.get("widget", None)
+                    attributes.update(domain.get("properties", {}))
+                    custom_widget = domain.get("widget", None)
                     if custom_widget and custom_widget in WIDGET_MAP:
                         widget = WIDGET_MAP[custom_widget]
 

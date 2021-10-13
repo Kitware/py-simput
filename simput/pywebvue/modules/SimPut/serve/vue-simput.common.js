@@ -5534,7 +5534,7 @@ var utils_DataManager = /*#__PURE__*/function () {
 
       var id = event.id,
           data = event.data,
-          constraints = event.constraints,
+          domains = event.domains,
           type = event.type,
           ui = event.ui;
 
@@ -5554,16 +5554,16 @@ var utils_DataManager = /*#__PURE__*/function () {
         _this.cache.data[id].original = JSON.parse(after);
       }
 
-      if (constraints) {
-        console.log("constraints(".concat(id, ")"));
+      if (domains) {
+        console.log("domains(".concat(id, ")"));
 
-        var _before = JSON.stringify(_this.cache.constraints[id]);
+        var _before = JSON.stringify(_this.cache.domains[id]);
 
-        var _after = JSON.stringify(constraints); // console.log(JSON.stringify(constraints, null, 2));
+        var _after = JSON.stringify(domains); // console.log(JSON.stringify(domains, null, 2));
 
 
         if (_before !== _after) {
-          _this.cache.constraints[id] = constraints;
+          _this.cache.domains[id] = domains;
         }
       }
 
@@ -5630,7 +5630,7 @@ var utils_DataManager = /*#__PURE__*/function () {
       this.cache = {
         data: {},
         ui: {},
-        constraints: {}
+        domains: {}
       };
     }
   }, {
@@ -5676,19 +5676,19 @@ var utils_DataManager = /*#__PURE__*/function () {
       return data;
     }
   }, {
-    key: "getConstraints",
-    value: function getConstraints(id) {
+    key: "getDomains",
+    value: function getDomains(id) {
       var forceFetch = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var constraints = this.cache.constraints[id];
+      var domains = this.cache.domains[id];
 
-      if ((!constraints || forceFetch) && !this.pending[id]) {
+      if ((!domains || forceFetch) && !this.pending[id]) {
         this.pending[id] = true;
         this.wsClient.getRemote().PyWebVue.trigger("".concat(this.namespace, "Fetch"), [], {
-          constraints: id
+          domains: id
         });
       }
 
-      return constraints;
+      return domains;
     }
   }, {
     key: "getUI",
@@ -5940,7 +5940,7 @@ var t=function(t,o,e){if(!o.hasOwnProperty(e)){var r=Object.getOwnPropertyDescri
     return {
       data: null,
       ui: null,
-      constraints: null
+      domains: null
     };
   },
   created: function created() {
@@ -5957,7 +5957,7 @@ var t=function(t,o,e){if(!o.hasOwnProperty(e)){var r=Object.getOwnPropertyDescri
       /* eslint-disable eqeqeq */
       if (id && _this.itemId == id) {
         _this.data = _this.getSimput().getData(id);
-        _this.constraints = _this.getSimput().getConstraints(id);
+        _this.domains = _this.getSimput().getDomains(id);
       }
 
       if (type && _this.type === type) {
@@ -5987,7 +5987,7 @@ var t=function(t,o,e){if(!o.hasOwnProperty(e)){var r=Object.getOwnPropertyDescri
       return this.data && this.data.type;
     },
     available: function available() {
-      return !!(this.data && this.constraints && this.ui);
+      return !!(this.data && this.domains && this.ui);
     },
     properties: function properties() {
       var _this$data;
@@ -5996,12 +5996,12 @@ var t=function(t,o,e){if(!o.hasOwnProperty(e)){var r=Object.getOwnPropertyDescri
     },
     all: function all() {
       var data = this.data,
-          constraints = this.constraints,
+          domains = this.domains,
           properties = this.properties;
       return {
         id: this.itemId,
         data: data,
-        constraints: constraints,
+        domains: domains,
         properties: properties
       };
     }
@@ -6013,7 +6013,7 @@ var t=function(t,o,e){if(!o.hasOwnProperty(e)){var r=Object.getOwnPropertyDescri
 
       if (this.itemId) {
         this.data = this.getSimput().getData(this.itemId);
-        this.constraints = this.getSimput().getConstraints(this.itemId);
+        this.domains = this.getSimput().getDomains(this.itemId);
 
         if (this.type) {
           this.ui = this.getSimput().getUI(this.type);
@@ -6039,8 +6039,8 @@ var t=function(t,o,e){if(!o.hasOwnProperty(e)){var r=Object.getOwnPropertyDescri
       data: function data() {
         return _this2.data;
       },
-      constraints: function constraints() {
-        return _this2.constraints;
+      domains: function domains() {
+        return _this2.domains;
       },
       properties: function properties() {
         return _this2.properties;
@@ -6580,14 +6580,14 @@ function addLabels(values, allTextValues) {
 
 
       if (this.itemsProperty) {
-        var _this$constraints$thi, _this$constraints$thi2;
+        var _this$domains$this$it, _this$domains$this$it2;
 
-        var available = ((_this$constraints$thi = this.constraints()[this.itemsProperty]) === null || _this$constraints$thi === void 0 ? void 0 : (_this$constraints$thi2 = _this$constraints$thi.LabelList) === null || _this$constraints$thi2 === void 0 ? void 0 : _this$constraints$thi2.available) || [];
+        var available = ((_this$domains$this$it = this.domains()[this.itemsProperty]) === null || _this$domains$this$it === void 0 ? void 0 : (_this$domains$this$it2 = _this$domains$this$it.LabelList) === null || _this$domains$this$it2 === void 0 ? void 0 : _this$domains$this$it2.available) || [];
         var filteredValues = this.properties()[this.itemsProperty];
         return addLabels(filteredValues, available);
       }
 
-      var availableOptions = this.constraints()[this.name] || {};
+      var availableOptions = this.domains()[this.name] || {};
       return (availableOptions === null || availableOptions === void 0 ? void 0 : (_availableOptions$Lis = availableOptions.List) === null || _availableOptions$Lis === void 0 ? void 0 : _availableOptions$Lis.available) || (availableOptions === null || availableOptions === void 0 ? void 0 : (_availableOptions$Has = availableOptions.HasTags) === null || _availableOptions$Has === void 0 ? void 0 : _availableOptions$Has.available) || (availableOptions === null || availableOptions === void 0 ? void 0 : (_availableOptions$Pro = availableOptions.ProxyBuilder) === null || _availableOptions$Pro === void 0 ? void 0 : _availableOptions$Pro.available) || (availableOptions === null || availableOptions === void 0 ? void 0 : (_availableOptions$Fie = availableOptions.FieldSelector) === null || _availableOptions$Fie === void 0 ? void 0 : _availableOptions$Fie.available);
     },
     selectedItem: function selectedItem() {
@@ -6634,7 +6634,7 @@ function addLabels(values, allTextValues) {
       this.dirty(this.name);
     }
   },
-  inject: ['data', 'properties', 'constraints', 'dirty', 'uiTS', 'simputChannel']
+  inject: ['data', 'properties', 'domains', 'dirty', 'uiTS', 'simputChannel']
 });
 // CONCATENATED MODULE: ./VueSimput/src/widgets/Select/script.js?vue&type=script&lang=js&
  /* harmony default export */ var widgets_Select_scriptvue_type_script_lang_js_ = (Select_scriptvue_type_script_lang_js_); 
@@ -6740,12 +6740,12 @@ var modules_es_array_slice = __webpack_require__("678b");
       }
     },
     computedLayout: function computedLayout() {
-      var _this$constraints$thi, _this$constraints$thi2;
+      var _this$domains$this$na, _this$domains$this$na2;
 
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
 
-      return this.layout || ((_this$constraints$thi = this.constraints()[this.name]) === null || _this$constraints$thi === void 0 ? void 0 : (_this$constraints$thi2 = _this$constraints$thi.UI) === null || _this$constraints$thi2 === void 0 ? void 0 : _this$constraints$thi2.layout) || 'vertical';
+      return this.layout || ((_this$domains$this$na = this.domains()[this.name]) === null || _this$domains$this$na === void 0 ? void 0 : (_this$domains$this$na2 = _this$domains$this$na.UI) === null || _this$domains$this$na2 === void 0 ? void 0 : _this$domains$this$na2.layout) || 'vertical';
     },
     computedSize: function computedSize() {
       if (Number(this.size) !== 1) {
@@ -6755,12 +6755,12 @@ var modules_es_array_slice = __webpack_require__("678b");
       return Number(this.size);
     },
     computedSizeControl: function computedSizeControl() {
-      var _this$constraints$thi3, _this$constraints$thi4;
+      var _this$domains$this$na3, _this$domains$this$na4;
 
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
 
-      return this.sizeControl || ((_this$constraints$thi3 = this.constraints()[this.name]) === null || _this$constraints$thi3 === void 0 ? void 0 : (_this$constraints$thi4 = _this$constraints$thi3.UI) === null || _this$constraints$thi4 === void 0 ? void 0 : _this$constraints$thi4.sizeControl);
+      return this.sizeControl || ((_this$domains$this$na3 = this.domains()[this.name]) === null || _this$domains$this$na3 === void 0 ? void 0 : (_this$domains$this$na4 = _this$domains$this$na3.UI) === null || _this$domains$this$na4 === void 0 ? void 0 : _this$domains$this$na4.sizeControl);
     },
     rule: function rule() {
       var _TYPES$this$type;
@@ -6773,57 +6773,41 @@ var modules_es_array_slice = __webpack_require__("678b");
       return ((_TYPES$this$type2 = TYPES[this.type]) === null || _TYPES$this$type2 === void 0 ? void 0 : _TYPES$this$type2.convert) || FALLBACK_CONVERT;
     },
     computedMin: function computedMin() {
-      var _this$constraints, _this$constraints$thi5, _this$constraints$thi6, _this$properties, _this$constraints2, _this$constraints2$pr, _this$constraints2$pr2;
-
       /* eslint-disable no-unused-expressions */
       if (this.min != null) {
         return this.min;
-      }
+      } // const { property, domain } = this.domains()?.[this.name]?.Range?.available || {};
+      // const selectedArray = this.properties()?.[property];
+      // const arrays = this.domains()?.[property]?.[domain]?.available || [];
+      // for (let i = 0; i < arrays.length; i++) {
+      //   const array = arrays[i];
+      //   if (array.value === selectedArray) {
+      //     console.log('Found array range', array.range);
+      //     return array.range[0];
+      //   }
+      // }
 
-      var _ref = ((_this$constraints = this.constraints()) === null || _this$constraints === void 0 ? void 0 : (_this$constraints$thi5 = _this$constraints[this.name]) === null || _this$constraints$thi5 === void 0 ? void 0 : (_this$constraints$thi6 = _this$constraints$thi5.Range) === null || _this$constraints$thi6 === void 0 ? void 0 : _this$constraints$thi6.available) || {},
-          property = _ref.property,
-          constraint = _ref.constraint;
 
-      var selectedArray = (_this$properties = this.properties()) === null || _this$properties === void 0 ? void 0 : _this$properties[property];
-      var arrays = ((_this$constraints2 = this.constraints()) === null || _this$constraints2 === void 0 ? void 0 : (_this$constraints2$pr = _this$constraints2[property]) === null || _this$constraints2$pr === void 0 ? void 0 : (_this$constraints2$pr2 = _this$constraints2$pr[constraint]) === null || _this$constraints2$pr2 === void 0 ? void 0 : _this$constraints2$pr2.available) || [];
-
-      for (var i = 0; i < arrays.length; i++) {
-        var array = arrays[i];
-
-        if (array.value === selectedArray) {
-          console.log('Found array range', array.range);
-          return array.range[0];
-        }
-      }
-
-      console.log('range failed', this.constraints()[this.name]); // TODO - FIXME use dynamic constraints
+      console.log('range failed', this.domains()[this.name]); // TODO - FIXME use dynamic domains
 
       return 0;
     },
     computedMax: function computedMax() {
-      var _this$constraints3, _this$constraints3$th, _this$constraints3$th2, _this$properties2, _this$constraints4, _this$constraints4$pr, _this$constraints4$pr2;
-
       /* eslint-disable no-unused-expressions */
       if (this.max != null) {
         return this.max;
       } // FIXME should always be dynamic...
-
-
-      var _ref2 = ((_this$constraints3 = this.constraints()) === null || _this$constraints3 === void 0 ? void 0 : (_this$constraints3$th = _this$constraints3[this.name]) === null || _this$constraints3$th === void 0 ? void 0 : (_this$constraints3$th2 = _this$constraints3$th.Range) === null || _this$constraints3$th2 === void 0 ? void 0 : _this$constraints3$th2.available) || {},
-          property = _ref2.property,
-          constraint = _ref2.constraint;
-
-      var selectedArray = (_this$properties2 = this.properties()) === null || _this$properties2 === void 0 ? void 0 : _this$properties2[property];
-      var arrays = ((_this$constraints4 = this.constraints()) === null || _this$constraints4 === void 0 ? void 0 : (_this$constraints4$pr = _this$constraints4[property]) === null || _this$constraints4$pr === void 0 ? void 0 : (_this$constraints4$pr2 = _this$constraints4$pr[constraint]) === null || _this$constraints4$pr2 === void 0 ? void 0 : _this$constraints4$pr2.available) || [];
-
-      for (var i = 0; i < arrays.length; i++) {
-        var array = arrays[i];
-
-        if (array.value === selectedArray) {
-          console.log('Found array range', array.range);
-          return array.range[1];
-        }
-      } // Dynamic constraints
+      // const { property, domain } = this.domains()?.[this.name]?.Range?.available || {};
+      // const selectedArray = this.properties()?.[property];
+      // const arrays = this.domains()?.[property]?.[domain]?.available || [];
+      // for (let i = 0; i < arrays.length; i++) {
+      //   const array = arrays[i];
+      //   if (array.value === selectedArray) {
+      //     console.log('Found array range', array.range);
+      //     return array.range[1];
+      //   }
+      // }
+      // Dynamic domains
 
 
       return 100;
@@ -6929,7 +6913,7 @@ var modules_es_array_slice = __webpack_require__("678b");
       this.dirty(this.name);
     }
   },
-  inject: ['data', 'properties', 'constraints', 'dirty']
+  inject: ['data', 'properties', 'domains', 'dirty']
 });
 // CONCATENATED MODULE: ./VueSimput/src/widgets/Slider/script.js?vue&type=script&lang=js&
  /* harmony default export */ var widgets_Slider_scriptvue_type_script_lang_js_ = (Slider_scriptvue_type_script_lang_js_); 
@@ -7017,7 +7001,7 @@ var templatevue_type_template_id_64c12b76_staticRenderFns = []
       this.dirty(this.name);
     }
   },
-  inject: ['data', 'properties', 'constraints', 'dirty']
+  inject: ['data', 'properties', 'domains', 'dirty']
 });
 // CONCATENATED MODULE: ./VueSimput/src/widgets/Switch/script.js?vue&type=script&lang=js&
  /* harmony default export */ var widgets_Switch_scriptvue_type_script_lang_js_ = (Switch_scriptvue_type_script_lang_js_); 
@@ -7123,7 +7107,7 @@ var templatevue_type_template_id_2059aedf_staticRenderFns = []
       this.dirty(this.name);
     }
   },
-  inject: ['data', 'properties', 'constraints', 'dirty']
+  inject: ['data', 'properties', 'domains', 'dirty']
 });
 // CONCATENATED MODULE: ./VueSimput/src/widgets/TextArea/script.js?vue&type=script&lang=js&
  /* harmony default export */ var widgets_TextArea_scriptvue_type_script_lang_js_ = (TextArea_scriptvue_type_script_lang_js_); 
@@ -7229,12 +7213,12 @@ var templatevue_type_template_id_468c6120_staticRenderFns = []
       }
     },
     computedLayout: function computedLayout() {
-      var _this$constraints$thi, _this$constraints$thi2;
+      var _this$domains$this$na, _this$domains$this$na2;
 
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
 
-      return this.layout || ((_this$constraints$thi = this.constraints()[this.name]) === null || _this$constraints$thi === void 0 ? void 0 : (_this$constraints$thi2 = _this$constraints$thi.UI) === null || _this$constraints$thi2 === void 0 ? void 0 : _this$constraints$thi2.layout) || 'horizontal';
+      return this.layout || ((_this$domains$this$na = this.domains()[this.name]) === null || _this$domains$this$na === void 0 ? void 0 : (_this$domains$this$na2 = _this$domains$this$na.UI) === null || _this$domains$this$na2 === void 0 ? void 0 : _this$domains$this$na2.layout) || 'horizontal';
     },
     computedSize: function computedSize() {
       if (Number(this.size) !== 1) {
@@ -7246,12 +7230,12 @@ var templatevue_type_template_id_468c6120_staticRenderFns = []
       return Number(this.size);
     },
     computedSizeControl: function computedSizeControl() {
-      var _this$constraints$thi3, _this$constraints$thi4;
+      var _this$domains$this$na3, _this$domains$this$na4;
 
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
 
-      return this.sizeControl || ((_this$constraints$thi3 = this.constraints()[this.name]) === null || _this$constraints$thi3 === void 0 ? void 0 : (_this$constraints$thi4 = _this$constraints$thi3.UI) === null || _this$constraints$thi4 === void 0 ? void 0 : _this$constraints$thi4.sizeControl);
+      return this.sizeControl || ((_this$domains$this$na3 = this.domains()[this.name]) === null || _this$domains$this$na3 === void 0 ? void 0 : (_this$domains$this$na4 = _this$domains$this$na3.UI) === null || _this$domains$this$na4 === void 0 ? void 0 : _this$domains$this$na4.sizeControl);
     },
     rule: function rule() {
       var _TYPES$this$type;
@@ -7385,7 +7369,7 @@ var templatevue_type_template_id_468c6120_staticRenderFns = []
       }
     }
   },
-  inject: ['data', 'properties', 'constraints', 'dirty', 'getSimput']
+  inject: ['data', 'properties', 'domains', 'dirty', 'getSimput']
 });
 // CONCATENATED MODULE: ./VueSimput/src/widgets/TextField/script.js?vue&type=script&lang=js&
  /* harmony default export */ var widgets_TextField_scriptvue_type_script_lang_js_ = (TextField_scriptvue_type_script_lang_js_); 
@@ -7437,7 +7421,7 @@ var templatevue_type_template_id_278a31a2_staticRenderFns = []
       return this.properties()[this.name];
     }
   },
-  inject: ['data', 'properties', 'constraints', 'dirty']
+  inject: ['data', 'properties', 'domains', 'dirty']
 });
 // CONCATENATED MODULE: ./VueSimput/src/widgets/Proxy/script.js?vue&type=script&lang=js&
  /* harmony default export */ var widgets_Proxy_scriptvue_type_script_lang_js_ = (Proxy_scriptvue_type_script_lang_js_); 
@@ -7476,7 +7460,7 @@ var templatevue_type_template_id_e7592b48_staticRenderFns = []
     property: {
       type: String
     },
-    constrain: {
+    domain: {
       type: String
     },
     mtime: {
@@ -7485,21 +7469,21 @@ var templatevue_type_template_id_e7592b48_staticRenderFns = []
   },
   computed: {
     visible: function visible() {
-      var _this$constraints, _this$constraints$thi;
+      var _this$domains, _this$domains$this$pr;
 
       this.mtime; // eslint-disable-line
 
-      var constraint = (_this$constraints = this.constraints()) === null || _this$constraints === void 0 ? void 0 : (_this$constraints$thi = _this$constraints[this.property]) === null || _this$constraints$thi === void 0 ? void 0 : _this$constraints$thi[this.constrain];
+      var domain = (_this$domains = this.domains()) === null || _this$domains === void 0 ? void 0 : (_this$domains$this$pr = _this$domains[this.property]) === null || _this$domains$this$pr === void 0 ? void 0 : _this$domains$this$pr[this.domain];
 
-      if (!constraint) {
-        // no constraint == valid
+      if (!domain) {
+        // no domain == valid
         return true;
       }
 
-      return constraint.value;
+      return domain.value;
     }
   },
-  inject: ['properties', 'constraints']
+  inject: ['properties', 'domains']
 });
 // CONCATENATED MODULE: ./VueSimput/src/widgets/Show/script.js?vue&type=script&lang=js&
  /* harmony default export */ var widgets_Show_scriptvue_type_script_lang_js_ = (Show_scriptvue_type_script_lang_js_); 
@@ -7538,7 +7522,7 @@ var templatevue_type_template_id_afdb3a12_staticRenderFns = []
     property: {
       type: String
     },
-    constrain: {
+    domain: {
       type: String
     },
     mtime: {
@@ -7547,21 +7531,21 @@ var templatevue_type_template_id_afdb3a12_staticRenderFns = []
   },
   computed: {
     visible: function visible() {
-      var _this$constraints, _this$constraints$thi;
+      var _this$domains, _this$domains$this$pr;
 
       this.mtime; // eslint-disable-line
 
-      var constraint = (_this$constraints = this.constraints()) === null || _this$constraints === void 0 ? void 0 : (_this$constraints$thi = _this$constraints[this.property]) === null || _this$constraints$thi === void 0 ? void 0 : _this$constraints$thi[this.constrain];
+      var domain = (_this$domains = this.domains()) === null || _this$domains === void 0 ? void 0 : (_this$domains$this$pr = _this$domains[this.property]) === null || _this$domains$this$pr === void 0 ? void 0 : _this$domains$this$pr[this.domain];
 
-      if (!constraint) {
-        // no constraint == valid
+      if (!domain) {
+        // no domain == valid
         return false;
       }
 
-      return !constraint.value;
+      return !domain.value;
     }
   },
-  inject: ['properties', 'constraints']
+  inject: ['properties', 'domains']
 });
 // CONCATENATED MODULE: ./VueSimput/src/widgets/Hide/script.js?vue&type=script&lang=js&
  /* harmony default export */ var widgets_Hide_scriptvue_type_script_lang_js_ = (Hide_scriptvue_type_script_lang_js_); 
