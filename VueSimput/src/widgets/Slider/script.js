@@ -112,6 +112,8 @@ export default {
         return this.max;
       }
 
+      // FIXME should always be dynamic...
+
       const { property, constraint } = this.constraints()?.[this.name]?.Range?.available || {};
       const selectedArray = this.properties()?.[property];
       const arrays = this.constraints()?.[property]?.[constraint]?.available || [];
@@ -123,7 +125,8 @@ export default {
         }
       }
 
-      // TODO - FIXME use dynamic constraints
+      // Dynamic constraints
+
       return 100;
     },
     computedStep() {

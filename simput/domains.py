@@ -3,64 +3,14 @@ from simput.core import Proxy, Domain, ProxyManager, ProxyManagerDecorator
 from icecream import ic
 
 # -----------------------------------------------------------------------------
-# Domain Decorator for ProxyManager
-# -----------------------------------------------------------------------------
-# This enable domain to set initial values and let UIManager to provide
-# additional informations to the client for error checking and listing
-# available values for drop down and else.
-# -----------------------------------------------------------------------------
-class DomainBehavior(ProxyManagerDecorator):
-    def __init__(self):
-        self._id_map = {}
-
-    def constraints(self, _id):
-        output = {}
-        domains = self._id_map.get(_id, {})
-        for prop_name, prop_domains in domains.items():
-            prop_info = {}
-            hints = []
-
-            for domain_name, domain_inst in prop_domains.items():
-                available = domain_inst.available()
-                if available:
-                    prop_info[domain_name] = { "available": available }
-
-            if prop_info or hints:
-                prop_info["hints"] = hints
-                output[prop_name] = prop_info
-
-        return output
-
-    def proxy_create_before_commit(self, proxy_type, initial_values, proxy, **kwargs):
-        domains = Domain.create(proxy)
-        self._id_map[proxy.id] = domains
-
-    def proxy_delete_before(self, proxy_id, trigger_modified, **kwargs):
-        del self._id_map[proxy_id]
-
-    # def proxy_update_before(self, change_set, **kwargs):
-    #     for change in change_set:
-    #         _id = change["id"]
-    #         _name = change["name"]
-    #         _value = change["value"]
-    #         _domains = self._id_map.get(_id, None)
-    #         if _domains and _name in _domains:
-    #             _prop_domains = _domains[_name]
-    #             for _domain in _prop_domains:
-    #                 _value = _domain.validate(_value)
-
-    #             # Clean value from changeset
-    #             change["value"] = _value
-
-# -----------------------------------------------------------------------------
 # Domains types
 # -----------------------------------------------------------------------------
 # Domains aim to set initial value and guide the user on how to enter certain
 # values with hint or validation.
 # -----------------------------------------------------------------------------
 class ProxyBuilder(Domain):
-    def __init__(self, proxy: Proxy, property: str, **kwargs):
-        super().__init__(proxy, property, **kwargs)
+    def __init__(self, proxy: Proxy, property: str, _domain_manager=None, **kwargs):
+        super().__init__(proxy, property, _domain_manager, **kwargs)
         self._items = kwargs.get("values", [])
         self._selection = kwargs.get("initial", None)
         self._proxy_map = {}
@@ -121,8 +71,29 @@ class ProxyBuilder(Domain):
             ]
         return []
 
+# -----------------------------------------------------------------------------
+class IsEqual(Domain):
+    def __init__(self, proxy: Proxy, property: str, _domain_manager=None, **kwargs):
+        super().__init__(proxy, property, _domain_manager, **kwargs)
+        self._available = kwargs.get("available", "")
+        self._value = kwargs.get("value", "")
+
+    def valid(self, required_level=2):
+        _v = self.value.id if isinstance(self.value, Proxy) else self.value
+        _available = self._domain_manager.available(self._proxy.id, self._property_name, self._available)
+        ic("IsEqual:valid", _v, _available, self._value)
+
+        if _v == self._value:
+            return True
+
+        for item in _available:
+            if item.get("value") == _v and item.get("text") == self._value:
+                return True
+
+        return False
 
 # -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
 Domain.register("ProxyBuilder", ProxyBuilder)
+Domain.register("IsEqual", IsEqual)

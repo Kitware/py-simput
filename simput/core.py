@@ -2,7 +2,7 @@ import yaml
 import json
 from pathlib import Path
 import xml.etree.ElementTree as ET
-from simput import constraints, filters
+from simput import filters
 from simput import ui
 
 try:
@@ -36,7 +36,7 @@ def is_equal(a, b):
 # -----------------------------------------------------------------------------
 # ObjectHelper
 # -----------------------------------------------------------------------------
-# Light weight object with convinient API that can be easily be serialized and
+# Light weight object with convinient API that can be easily serialized and
 # shared across locations.
 # -----------------------------------------------------------------------------
 class ObjectHelper:
@@ -211,6 +211,14 @@ class Proxy:
         if change_detected:
             self._obj_manager.dirty_ids.add(self._id)
 
+        print("set_property", name, safe_value)
+        self._emit(
+            "update",
+            modified=change_detected,
+            property_name=name,
+            properties_dirty=list(self._dirty_properties),
+        )
+
         return change_detected
 
     def set_properties(self, props):
@@ -379,7 +387,7 @@ class Domain:
         Domain.__domain_availables[name] = constructor
 
     @staticmethod
-    def create(proxy: Proxy):
+    def create(proxy: Proxy, _domain_manager=None):
         domains = {}
         definition = proxy.definition
         for name in definition:
@@ -391,7 +399,7 @@ class Domain:
                 _name = domain_def.get("name", _type)
                 if _type in Domain.__domain_availables:
                     domain_inst = Domain.__domain_availables[_type](
-                        proxy, name, **domain_def
+                        proxy, name, _domain_manager, **domain_def
                     )
                     if _name not in _prop_domains:
                         _prop_domains[_name] = domain_inst
@@ -408,10 +416,11 @@ class Domain:
 
         return domains
 
-    def __init__(self, proxy: Proxy, property: str, **kwargs):
+    def __init__(self, proxy: Proxy, property: str, _domain_manager=None, **kwargs):
+        self._domain_manager = _domain_manager
         self._proxy = proxy
         self._property_name = property
-        self._dependent_properties = set()
+        self._dependent_properties = set([self._property_name])
         self._need_set = False
         self._proxy.on(self._on_proxy_change)
         self._level = kwargs.get("level", 0)
@@ -422,15 +431,15 @@ class Domain:
         self._proxy.off(self._on_proxy_change)
 
     def _on_proxy_change(
-        self, topic, modified=False, properties_dirty=[], properties_change=[]
+        self, topic, modified=False, properties_dirty=[], properties_change=[], **kwargs
     ):
+        dependency_count = len(set(properties_dirty).union(self._dependent_properties))
+        if self._domain_manager and dependency_count:
+            self._domain_manager.dirty(self._proxy.id)
+
         if self._need_set:
-            need_compute = topic in ["commit", "reset"] and (
-                set(properties_dirty) & self._dependent_properties
-            )
-            need_compute |= topic == "update" and (
-                set(properties_change) & self._dependent_properties
-            )
+            need_compute = topic in ["commit", "reset"] and dependency_count
+            need_compute |= topic == "update" and dependency_count
             if need_compute:
                 self.set_value()
 
@@ -476,12 +485,12 @@ class Domain:
     def hints(self):
         return []
 
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # ProxyManagerDecorator
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Allow to decorate ProxyManager to extend default behavior by hooking to
 # life cycle calls.
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 class ProxyManagerDecorator:
     def __init__(self):
         self._pxm = None
@@ -541,9 +550,9 @@ class ProxyManagerDecorator:
         pass
 
 
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # ProxyManager
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # A ProxyManager needs to load some definitions in order to be able to create
 # proxies which will hold a set of values in their properties.
 # A proxy state can then be used to control a concrete object that can be
@@ -552,7 +561,7 @@ class ProxyManagerDecorator:
 # constraints and more.
 # The ProxyManager is responsible for keeping track of proxies lifecycle and
 # finding them from their Id or Tags.
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 class ProxyManager:
     """Proxy Manager from model definition"""
 
@@ -746,7 +755,6 @@ class ProxyManager:
         """
         return proxy instance
         """
-        ic(proxy_id)
         return self._id_map.get(proxy_id, None)
 
     def update(self, change_set):
@@ -886,12 +894,12 @@ class ProxyManager:
             self.get(_id).reset()
 
 
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # UIManager
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # A UIManager is responsible to map a UI to proxy properties with the help
 # of a resolver which will specialized the target environment (Qt, Web)
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 class UIManager:
     """UI Manager provide UI information to edit and input object properties"""
 
@@ -1005,49 +1013,13 @@ class UIManager:
     # -------------------------------------------------------------------------
 
     def data(self, proxy_id):
-        """Return proxy state"""
+        """Return proxy state to fill UI with"""
         _proxy = self._pxm.get(proxy_id)
         if _proxy:
             return _proxy.state
 
         print("No proxy with ID", proxy_id)
         return None
-
-    def constraints(self, proxy_id):
-        """Return hints for applying constraints locally"""
-        result = {}
-        ic("constraints", proxy_id)
-        # obj = self._obj_manager.get(proxy_id)
-        # obj_def = self._obj_manager.get_definition(obj["type"])
-        # for prop_name, prop_def in obj_def.items():
-        #     if "constraints" in prop_def:
-        #         container = {}
-        #         result[prop_name] = container
-        #         for constraint in prop_def["constraints"]:
-        #             key = (
-        #                 constraint["name"]
-        #                 if "name" in constraint
-        #                 else constraint["type"]
-        #             )
-        #             value = constraints.is_valid(
-        #                 self._obj_manager,
-        #                 obj,
-        #                 prop_name,
-        #                 constraint,
-        #                 constraints=prop_def["constraints"],
-        #             )
-        #             available = constraints.available(
-        #                 self._obj_manager,
-        #                 obj,
-        #                 constraint,
-        #                 constraints=prop_def["constraints"],
-        #             )
-        #             container[key] = {
-        #                 "value": value,
-        #                 "available": available,
-        #             }
-
-        return result
 
     def ui(self, _type):
         """Return resolved layout"""
@@ -1094,6 +1066,86 @@ class ObjectFactory:
 
         return obj
 
+
+# -----------------------------------------------------------------------------
+# DomainManager
+# -----------------------------------------------------------------------------
+# A DomainManager can optionally be linked to a ProxyManager to handle
+# Domains life cycle and provide validation and/or guidance on how to set values
+# to the properties of a proxy.
+# This enable domain to set initial values and let UIManager to provide
+# additional informations to the client for error checking and listing
+# available values for drop down and else.
+# -----------------------------------------------------------------------------
+class DomainManager(ProxyManagerDecorator):
+    def __init__(self):
+        self._id_map = {}
+        self._dirty_ids = set()
+
+    def has_dirty(self):
+        return len(self._dirty_ids) > 0
+
+    def clear_dirty(self):
+        self._dirty_ids.clear()
+
+    def dirty(self, *_ids):
+        for _id in _ids:
+            self._dirty_ids.add(_id)
+
+    def get_dirty_constraints(self):
+        messages = []
+        for _id in self._dirty_ids:
+            msg = { "id": _id, "constraints": self.constraints(_id) }
+            messages.append(msg)
+        return messages
+
+    def available(self, _id, _prop_name, _domain_name):
+        domains = self._id_map.get(_id, {})
+        prop_domains = domains.get(_prop_name, {})
+        domain = prop_domains.get(_domain_name, None)
+        if domain:
+            return domain.available()
+        return []
+
+    def constraints(self, _id):
+        output = {}
+        domains = self._id_map.get(_id, {})
+        for prop_name, prop_domains in domains.items():
+            prop_info = {}
+            hints = []
+
+            for domain_name, domain_inst in prop_domains.items():
+                available = domain_inst.available()
+                valid = domain_inst.valid()
+                if available or not valid:
+                    prop_info[domain_name] = { "available": available, "valid": valid }
+
+            if prop_info or hints:
+                prop_info["hints"] = hints
+                output[prop_name] = prop_info
+
+        return output
+
+    def proxy_create_before_commit(self, proxy_type, initial_values, proxy, **kwargs):
+        domains = Domain.create(proxy, self)
+        self._id_map[proxy.id] = domains
+
+    def proxy_delete_before(self, proxy_id, trigger_modified, **kwargs):
+        del self._id_map[proxy_id]
+
+    # def proxy_update_before(self, change_set, **kwargs):
+    #     for change in change_set:
+    #         _id = change["id"]
+    #         _name = change["name"]
+    #         _value = change["value"]
+    #         _domains = self._id_map.get(_id, None)
+    #         if _domains and _name in _domains:
+    #             _prop_domains = _domains[_name]
+    #             for _domain in _prop_domains:
+    #                 _value = _domain.validate(_value)
+
+    #             # Clean value from changeset
+    #             change["value"] = _value
 
 ###############################################################################
 # Operators

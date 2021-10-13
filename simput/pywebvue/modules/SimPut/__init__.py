@@ -3,6 +3,8 @@ import os
 from wslink import register as exportRpc
 from wslink.websocket import LinkProtocol
 
+from icecream import ic
+
 import json
 
 serve_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "serve"))
@@ -23,9 +25,10 @@ MANAGERS = {}
 
 
 class SimputHelper:
-    def __init__(self, app, ui_manager, namespace="simput"):
+    def __init__(self, app, ui_manager, namespace="simput", domain_manager=None):
         self._app = app
         self._ui_manager = ui_manager
+        self._domain_manager = domain_manager
         self._namespace = namespace
         self._pending_changeset = {}
         self._auto_update = False
@@ -77,20 +80,25 @@ class SimputHelper:
         return change_set
 
     def apply(self):
-        self._ui_manager.proxymanager.update(self.changeset)
+        ic("apply")
+        self._ui_manager.proxymanager.commit_all()
         self.reset()
 
     def reset(self):
+        ic("reset")
         ids_to_update = list(self._pending_changeset.keys())
         self._pending_changeset = {}
         self._app.set(self.changecount_key, 0)
         self._app.set(self.changeset_key, [])
 
+        self._ui_manager.proxymanager.reset_all()
+
         # Go ahead and push changes
         for _id in ids_to_update:
-            self.push(id=_id)
+            self.push(id=_id, constraints=_id)
 
     def refresh(self, id=0, property=""):
+        ic("refresh")
         print("refresh not implemented...")
         # if self._ui_manager.proxymanager.refresh(id, property):
         #     _props = self._ui_manager.proxymanager.get(id).get("properties", {})
@@ -101,13 +109,19 @@ class SimputHelper:
         #         "simput.push", self._ui_manager.id, id=id, type=None
         #     )
 
-    def push(self, id=None, type=None):
-        self._app.protocol_call("simput.push", self._ui_manager.id, id=id, type=type)
+    def push(self, id=None, type=None, constraints=None):
+        if id:
+            self._app.protocol_call("simput.data.get", self._ui_manager.id, id)
+        if type:
+            self._app.protocol_call("simput.ui.get", self._ui_manager.id, type)
+        if constraints:
+            self._app.protocol_call("simput.constraints.get", self._ui_manager.id, constraints)
 
     def emit(self, topic, **kwargs):
         self._app.protocol_call("simput.push.event", topic, **kwargs)
 
     def update(self, change_set):
+        ic("update")
         for change in change_set:
             _id = change.get("id")
             _name = change.get("name")
@@ -121,6 +135,12 @@ class SimputHelper:
 
         self._app.set(self.changecount_key, len(self.changeset))
         self._app.set(self.changeset_key, self.changeset)
+
+        self._ui_manager.proxymanager.update(change_set)
+        if self._domain_manager and self._domain_manager.has_dirty():
+            for msg in self._domain_manager.get_dirty_constraints():
+                self._app.protocol_call("simput.message.push", msg)
+            self._domain_manager.clear_dirty()
 
         if self._auto_update:
             self.apply()
@@ -163,13 +183,10 @@ class SimputProtocol(LinkProtocol):
             return
 
         uim = handler.get("uim")
-        domains = handler.get("domains", None)
 
         message = {"id": id, "type": type}
         if id is not None:
             message.update({"data": uim.data(id)})
-            if domains:
-                message.update({"constraints": domains.constraints(id)})
 
         if type is not None:
             message.update({"ui": uim.ui(type)})
@@ -177,6 +194,59 @@ class SimputProtocol(LinkProtocol):
         print(json.dumps(message, indent=2))
 
         self.publish("simput.push", message)
+
+    @exportRpc("simput.data.get")
+    def get_data(self, manager_id, id):
+        ic("get_data", id)
+        handler = MANAGERS.get(manager_id, None)
+        if handler is None:
+            print(f"No manager found for id {manager_id}")
+            return
+
+        uim = handler.get("uim")
+        msg = {"id": id, "data": uim.data(id)}
+        self.send_message(msg)
+        return msg
+
+    @exportRpc("simput.ui.get")
+    def get_ui(self, manager_id, type):
+        ic("get_ui", type)
+        handler = MANAGERS.get(manager_id, None)
+        if handler is None:
+            print(f"No manager found for id {manager_id}")
+            return
+
+        uim = handler.get("uim")
+        msg = {"type": type, "ui": uim.ui(type)}
+        self.send_message(msg)
+        return msg
+
+    @exportRpc("simput.constraints.get")
+    def get_constraints(self, manager_id, id):
+        ic("get_constraints", id)
+        handler = MANAGERS.get(manager_id, None)
+        if handler is None:
+            print(f"No manager found for id {manager_id}")
+            return
+
+        msg = {"id": id, "constraints": {} }
+
+        domains = handler.get("domains", None)
+        if domains:
+            msg["constraints"] = domains.constraints(id)
+
+        self.send_message(msg)
+        return msg
+
+    @exportRpc("simput.message.push")
+    def send_message(self, message):
+        self.publish("simput.push", message)
+
+    @exportRpc("simput.push.event")
+    def emit(self, topic, **kwargs):
+        event = {"topic": topic, **kwargs}
+        self.publish("simput.event", event)
+
 
     @exportRpc("simput.push.event")
     def emit(self, topic, **kwargs):
@@ -210,4 +280,4 @@ def register_manager(manager, domains=None):
 
 def create_helper(manager, namespace="simput", domains=None):
     register_manager(manager, domains)
-    return SimputHelper(APP, manager, namespace)
+    return SimputHelper(APP, manager, namespace, domain_manager=domains)

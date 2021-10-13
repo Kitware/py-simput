@@ -1,6 +1,6 @@
 from pywebvue import App
-from simput.core import ProxyManager, UIManager
-from simput.domains import DomainBehavior
+from simput.core import ProxyManager, UIManager, DomainManager
+import simput.domains
 from simput.ui.web import VuetifyResolver
 from simput.pywebvue.modules import SimPut
 
@@ -19,7 +19,7 @@ app.enableModule(SimPut)
 # SimPut initialization
 # -----------------------------------------------------------------------------
 
-domains = DomainBehavior()
+domains = DomainManager()
 pxm = ProxyManager()
 pxm.add_decorator(domains)
 ui_resolver = VuetifyResolver()

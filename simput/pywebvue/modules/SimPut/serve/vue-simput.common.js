@@ -5541,6 +5541,7 @@ var utils_DataManager = /*#__PURE__*/function () {
       if (data) {
         var _this$cache$data$id;
 
+        console.log("data(".concat(id, ")"));
         delete _this.pending[id];
         var before = JSON.stringify((_this$cache$data$id = _this.cache.data[id]) === null || _this$cache$data$id === void 0 ? void 0 : _this$cache$data$id.properties);
         var after = JSON.stringify(data.properties);
@@ -5554,9 +5555,12 @@ var utils_DataManager = /*#__PURE__*/function () {
       }
 
       if (constraints) {
+        console.log("constraints(".concat(id, ")"));
+
         var _before = JSON.stringify(_this.cache.constraints[id]);
 
-        var _after = JSON.stringify(constraints);
+        var _after = JSON.stringify(constraints); // console.log(JSON.stringify(constraints, null, 2));
+
 
         if (_before !== _after) {
           _this.cache.constraints[id] = constraints;
@@ -5564,6 +5568,7 @@ var utils_DataManager = /*#__PURE__*/function () {
       }
 
       if (ui) {
+        console.log("ui(".concat(type, ")"));
         delete _this.pending[type];
         _this.cache.ui[type] = ui;
       }
@@ -5679,7 +5684,7 @@ var utils_DataManager = /*#__PURE__*/function () {
       if ((!constraints || forceFetch) && !this.pending[id]) {
         this.pending[id] = true;
         this.wsClient.getRemote().PyWebVue.trigger("".concat(this.namespace, "Fetch"), [], {
-          id: id
+          constraints: id
         });
       }
 
@@ -6801,7 +6806,8 @@ var modules_es_array_slice = __webpack_require__("678b");
       /* eslint-disable no-unused-expressions */
       if (this.max != null) {
         return this.max;
-      }
+      } // FIXME should always be dynamic...
+
 
       var _ref2 = ((_this$constraints3 = this.constraints()) === null || _this$constraints3 === void 0 ? void 0 : (_this$constraints3$th = _this$constraints3[this.name]) === null || _this$constraints3$th === void 0 ? void 0 : (_this$constraints3$th2 = _this$constraints3$th.Range) === null || _this$constraints3$th2 === void 0 ? void 0 : _this$constraints3$th2.available) || {},
           property = _ref2.property,
@@ -6817,7 +6823,7 @@ var modules_es_array_slice = __webpack_require__("678b");
           console.log('Found array range', array.range);
           return array.range[1];
         }
-      } // TODO - FIXME use dynamic constraints
+      } // Dynamic constraints
 
 
       return 100;
@@ -7479,21 +7485,18 @@ var templatevue_type_template_id_e7592b48_staticRenderFns = []
   },
   computed: {
     visible: function visible() {
-      var _this$constraints, _this$constraints$thi2;
+      var _this$constraints, _this$constraints$thi;
 
       this.mtime; // eslint-disable-line
 
-      var _this$constraints$thi = (_this$constraints = this.constraints()) === null || _this$constraints === void 0 ? void 0 : (_this$constraints$thi2 = _this$constraints[this.property]) === null || _this$constraints$thi2 === void 0 ? void 0 : _this$constraints$thi2[this.constrain],
-          value = _this$constraints$thi.value,
-          available = _this$constraints$thi.available;
+      var constraint = (_this$constraints = this.constraints()) === null || _this$constraints === void 0 ? void 0 : (_this$constraints$thi = _this$constraints[this.property]) === null || _this$constraints$thi === void 0 ? void 0 : _this$constraints$thi[this.constrain];
 
-      if (value === 'local-in') {
-        var _this$properties;
-
-        return available.indexOf((_this$properties = this.properties()) === null || _this$properties === void 0 ? void 0 : _this$properties[this.property]) !== -1;
+      if (!constraint) {
+        // no constraint == valid
+        return true;
       }
 
-      return value;
+      return constraint.value;
     }
   },
   inject: ['properties', 'constraints']
@@ -7544,21 +7547,18 @@ var templatevue_type_template_id_afdb3a12_staticRenderFns = []
   },
   computed: {
     visible: function visible() {
-      var _this$constraints, _this$constraints$thi2;
+      var _this$constraints, _this$constraints$thi;
 
       this.mtime; // eslint-disable-line
 
-      var _this$constraints$thi = (_this$constraints = this.constraints()) === null || _this$constraints === void 0 ? void 0 : (_this$constraints$thi2 = _this$constraints[this.property]) === null || _this$constraints$thi2 === void 0 ? void 0 : _this$constraints$thi2[this.constrain],
-          value = _this$constraints$thi.value,
-          available = _this$constraints$thi.available;
+      var constraint = (_this$constraints = this.constraints()) === null || _this$constraints === void 0 ? void 0 : (_this$constraints$thi = _this$constraints[this.property]) === null || _this$constraints$thi === void 0 ? void 0 : _this$constraints$thi[this.constrain];
 
-      if (value === 'local-in') {
-        var _this$properties;
-
-        return available.indexOf((_this$properties = this.properties()) === null || _this$properties === void 0 ? void 0 : _this$properties[this.property]) === -1;
+      if (!constraint) {
+        // no constraint == valid
+        return false;
       }
 
-      return !value;
+      return !constraint.value;
     }
   },
   inject: ['properties', 'constraints']

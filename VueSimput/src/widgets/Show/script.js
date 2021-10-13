@@ -14,11 +14,12 @@ export default {
   computed: {
     visible() {
       this.mtime; // eslint-disable-line
-      const { value, available } = this.constraints()?.[this.property]?.[this.constrain];
-      if (value === 'local-in') {
-        return available.indexOf(this.properties()?.[this.property]) !== -1;
+      const constraint = this.constraints()?.[this.property]?.[this.constrain];
+      if (!constraint) {
+        // no constraint == valid
+        return true;
       }
-      return value;
+      return constraint.value;
     },
   },
   inject: ['properties', 'constraints'],

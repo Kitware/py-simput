@@ -106,10 +106,10 @@ Clip:
             type: ImplicitSphere
           - name: Scalar
             type: ImplicitPlaceHolder
-      - type: IsEqual
-        value: Scalar
+      - name: Scalars
+        type: IsEqual
         available: ProxyBuilder
-        name: Scalars
+        value: Scalar
   InsideOut:
     size: 1
     type: uint8

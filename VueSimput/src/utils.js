@@ -17,6 +17,7 @@ export class DataManager {
           id, data, constraints, type, ui,
         } = event;
         if (data) {
+          console.log(`data(${id})`);
           delete this.pending[id];
           const before = JSON.stringify(this.cache.data[id]?.properties);
           const after = JSON.stringify(data.properties);
@@ -27,13 +28,16 @@ export class DataManager {
           this.cache.data[id].original = JSON.parse(after);
         }
         if (constraints) {
+          console.log(`constraints(${id})`);
           const before = JSON.stringify(this.cache.constraints[id]);
           const after = JSON.stringify(constraints);
+          // console.log(JSON.stringify(constraints, null, 2));
           if (before !== after) {
             this.cache.constraints[id] = constraints;
           }
         }
         if (ui) {
+          console.log(`ui(${type})`);
           delete this.pending[type];
           this.cache.ui[type] = ui;
         }
@@ -122,7 +126,7 @@ export class DataManager {
 
     if ((!constraints || forceFetch) && !this.pending[id]) {
       this.pending[id] = true;
-      this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { id });
+      this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { constraints: id });
     }
 
     return constraints;
