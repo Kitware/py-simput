@@ -14,6 +14,7 @@ class ProxyBuilder(Domain):
         self._items = kwargs.get("values", [])
         self._selection = kwargs.get("initial", None)
         self._proxy_map = {}
+        _bind = kwargs.get("bind", None)
         pxm: ProxyManager = proxy.manager
         _tags = [f"{proxy.id}::{property}"]
         for item in self._items:
@@ -22,6 +23,8 @@ class ProxyBuilder(Domain):
             sub_proxy = pxm.create(_type, _name=_name, _tags=_tags)
             proxy.own = sub_proxy
             self._proxy_map[_name] = sub_proxy
+            if _bind:
+                sub_proxy.set_property(_bind, proxy)
 
     # def validate(self, value):
     #     ic(value)
