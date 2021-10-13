@@ -26,8 +26,8 @@ def create_id_generator(prefix=""):
 # Helper method to help detect changes when setting new property value
 # -----------------------------------------------------------------------------
 def is_equal(a, b):
-    return False
-
+    # might need some deeper investigation
+    return a == b
 
 ###############################################################################
 # "Remoting" layers
@@ -132,6 +132,8 @@ class Proxy:
                 print("+++ Don't know how to deal with domain yet", _init_def)
             elif _init_def:
                 self.set_property(_prop_name, _init_def)
+            else:
+                self.set_property(_prop_name, None)
 
     @property
     def definition(self):
@@ -242,7 +244,7 @@ class Proxy:
         self._obj_manager.dirty_ids.discard(self._id)
         if self._dirty_properties:
             properties_dirty = list(self._dirty_properties)
-            if self._linked_object:
+            if self._object:
                 push(self)
 
             self._pushed_properties.update(self._properties)
@@ -281,6 +283,8 @@ class Proxy:
                 return self._obj_manager.get(self._properties.get(name))
 
             return self._properties[name]
+
+        ic("ERROR: __getitem__", name)
 
         raise AttributeError()
 
@@ -886,12 +890,16 @@ class ProxyManager:
     # -------------------------------------------------------------------------
 
     def commit_all(self):
-        for _id in list(self.dirty_ids):
+        dirty_ids = list(self.dirty_ids)
+        for _id in dirty_ids:
             self.get(_id).commit()
+        self._emit("commit", ids=dirty_ids)
 
     def reset_all(self):
-        for _id in list(self.dirty_ids):
+        dirty_ids = list(self.dirty_ids)
+        for _id in dirty_ids:
             self.get(_id).reset()
+        self._emit("reset", ids=dirty_ids)
 
 
 # -----------------------------------------------------------------------------
@@ -1177,10 +1185,14 @@ def push(proxy: Proxy):
     if hasattr(obj, "GetMTime"):
         change_count = obj.GetMTime()
 
+    ic("Push", proxy.edited_property_names)
+
     for name in proxy.edited_property_names:
         value = proxy[name]
         if isinstance(value, Proxy):
-            value = value.object
+            value = value.object if value else None
+        elif value is None:
+            continue
 
         if "_set" in obj_def.get(name, ""):
             # custom setter handling
@@ -1201,6 +1213,7 @@ def push(proxy: Proxy):
                 change_count += 1
         elif hasattr(obj, f"Set{name}"):
             fn = getattr(obj, f"Set{name}")
+            ic(f"Set{name}", value)
             if fn(value):
                 change_count += 1
 
@@ -1215,6 +1228,7 @@ def push(proxy: Proxy):
 # Update properties by reading values from the object the proxy is controlling
 # -----------------------------------------------------------------------------
 def fetch(proxy: Proxy, names=[]):
+    ic("fetch", proxy.id, names)
     if proxy:
         obj = proxy.object
         obj_def = proxy.definition

@@ -1,9 +1,11 @@
 import asyncio
 from pywebvue import App
-from simput.core import ObjectManager, UIManager
+from simput.core import ProxyManager, UIManager, ObjectFactory, fetch
 from simput.ui.web import VuetifyResolver
 from simput.pywebvue.modules import SimPut
 from pywebvue.modules import VTK
+
+from icecream import ic
 
 from vtkmodules.vtkFiltersSources import (
     vtkConeSource,
@@ -41,24 +43,24 @@ app.enableModule(VTK)
 # SimPut initialization
 # -----------------------------------------------------------------------------
 
-obj_manager = ObjectManager()
-ui_resolver = VuetifyResolver()
-ui_manager = UIManager(obj_manager, ui_resolver)
+# For VTK object creation
+vtk_factory = ObjectFactory()
+vtk_factory.register("Cone", vtkConeSource)
+vtk_factory.register("Sphere", vtkSphereSource)
+vtk_factory.register("Cylinder", vtkCylinderSource)
 
-obj_manager.load_model(yaml_content=app.txt("./model/model.yaml"))
+pxm = ProxyManager(vtk_factory)
+ui_manager = UIManager(pxm, VuetifyResolver())
+
+pxm.load_model(yaml_content=app.txt("./model/model.yaml"))
 ui_manager.load_language(yaml_content=app.txt("./model/model.yaml"))
 ui_manager.load_ui(xml_content=app.txt("./model/ui.xml"))
-
-# For VTK object creation
-obj_manager.register_construtor("Cone", vtkConeSource)
-obj_manager.register_construtor("Sphere", vtkSphereSource)
-obj_manager.register_construtor("Cylinder", vtkCylinderSource)
 
 # Setup network handlers + state properties
 simput = SimPut.create_helper(ui_manager)
 
 # Fill drop down with available objects
-app.set("objTypes", obj_manager.types)
+app.set("objTypes", list(pxm.available_types))
 
 # -----------------------------------------------------------------------------
 # VTK management
@@ -73,7 +75,7 @@ view = View()
 
 
 def update_sources(*args, **kwargs):
-    ids = list(map(lambda p: p.get("id"), obj_manager.tags("Source")))
+    ids = list(map(lambda p: p.id, pxm.tags("Source")))
     app.set("sourceIds", ids)
 
 
@@ -81,6 +83,7 @@ def update_sources(*args, **kwargs):
 
 
 def update_view(*args, **kwargs):
+    ic("update_view")
     app.set("view", VTK.scene(view.render_window))
     app.set("exportContent", None)
 
@@ -90,8 +93,9 @@ def update_view(*args, **kwargs):
 
 @app.trigger("create")
 def create_object(name, type):
-    obj = obj_manager.create(type, _name=name)
-    app.set("activeId", obj.get("id"))
+    obj = pxm.create(type, _name=name)
+    fetch(obj, list(obj.get_properties().keys()))
+    app.set("activeId", obj.id)
 
 
 # -----------------------------------------------------------------------------
@@ -100,7 +104,7 @@ def create_object(name, type):
 @app.trigger("delete")
 def delete_object(obj_id):
     active_id = app.get("activeId")
-    obj_manager.delete(obj_id)
+    pxm.delete(obj_id)
     if active_id == obj_id:
         app.set("activeId", None)
 
@@ -125,7 +129,7 @@ def on_change(topic, ids=None, **kwargs):
 
     if topic == "create":
         for obj_id in ids:
-            obj_vtk = obj_manager.get_object(obj_id)
+            obj_vtk = pxm.get(obj_id).object
             rep = Representation()
             rep.SetView(view)
             rep.SetInput(obj_vtk)
@@ -136,7 +140,7 @@ def on_change(topic, ids=None, **kwargs):
     update_view()
 
 
-obj_manager.on_change(on_change)
+pxm.on(on_change)
 
 # -----------------------------------------------------------------------------
 # Import / Export
@@ -148,7 +152,7 @@ def import_file():
     file_data = app.get("importFile")
     if file_data:
         json_content = file_data.get("content").decode("utf-8")
-        obj_manager.load(file_content=json_content)
+        pxm.load(file_content=json_content)
 
     # reset current import
     app.set("importFile", None)
@@ -159,7 +163,7 @@ def import_file():
 
 @app.trigger("export")
 def export_state():
-    app.set("exportContent", obj_manager.save())
+    app.set("exportContent", pxm.save())
 
 
 # -----------------------------------------------------------------------------
