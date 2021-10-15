@@ -1,6 +1,7 @@
-from simput.core import Proxy, Domain, ProxyManager
+from simput.core import ObjectValue, Proxy, Domain, ProxyManager
+from simput import handlers
 
-from icecream import ic
+# from icecream import ic
 
 # -----------------------------------------------------------------------------
 # Domains types
@@ -8,36 +9,41 @@ from icecream import ic
 # Domains aim to set initial value and guide the user on how to enter certain
 # values with hint or validation.
 # -----------------------------------------------------------------------------
+# - ProxyBuilder: Create proxy for a property
+# - IsEqual: Create condition that can then be used in UI visibility
+# - FieldSelector: Select array for a given property
+# - Range: Compute min/max/mean of a given array range
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# ProxyBuilder
+# -----------------------------------------------------------------------------
+#  type: ProxyBuilder        | select this domain
+#  initial: xyz              | set name=xyz proxy to the property as default
+#  values:                   | list all possible proxy that can be set
+#    - name: xyz             | proxy entry: - name
+#      type: Representation  |              - proxy type
+#  bind: Input               | set self to SubProxy.Input property (optional)
+# -----------------------------------------------------------------------------
 class ProxyBuilder(Domain):
-    def __init__(self, proxy: Proxy, property: str, _domain_manager=None, **kwargs):
-        super().__init__(proxy, property, _domain_manager, **kwargs)
+    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
+        super().__init__(_proxy, _property, _domain_manager, **kwargs)
         self._items = kwargs.get("values", [])
         self._selection = kwargs.get("initial", None)
         self._proxy_map = {}
         _bind = kwargs.get("bind", None)
-        pxm: ProxyManager = proxy.manager
-        _tags = [f"{proxy.id}::{property}"]
+        pxm: ProxyManager = _proxy.manager
+        _tags = [f"{_proxy.id}::{_property}"]
+        _ids = []
         for item in self._items:
             _name = item.get("name")
             _type = item.get("type")
             sub_proxy = pxm.create(_type, _name=_name, _tags=_tags)
-            proxy.own = sub_proxy
+            _ids.append(sub_proxy.id)
             self._proxy_map[_name] = sub_proxy
             if _bind:
-                sub_proxy.set_property(_bind, proxy)
-
-    # def validate(self, value):
-    #     ic(value)
-    #     if value in self._proxy_map:
-    #         return self._proxy_map[value].id
-
-    #     if value in self._items:
-    #         return self._proxy_map[value.get("name")].id
-
-    #     return value
-
-    def compute_value(self):
-        return None
+                sub_proxy.set_property(_bind, _proxy)
+        _proxy.own = _ids
 
     def set_value(self):
         if self._should_compute_value:
@@ -48,7 +54,7 @@ class ProxyBuilder(Domain):
 
     def available(self):
         return [
-            {"text": item.get("name"), "value": self._proxy_map[item.get("name")].id }
+            {"text": item.get("name"), "value": self._proxy_map[item.get("name")].id}
             for item in self._items
         ]
 
@@ -74,17 +80,27 @@ class ProxyBuilder(Domain):
             ]
         return []
 
+
+# -----------------------------------------------------------------------------
+# IsEqual
+# -----------------------------------------------------------------------------
+#  type: IsEqual          | select this domain
+#  name: Scalars          | (optional) provide another name than its type
+#  available: {type/name} | Which domain available list on prop to use
+#  value: Scalar          | Value that our prop needs to match to be "valid"
 # -----------------------------------------------------------------------------
 class IsEqual(Domain):
-    def __init__(self, proxy: Proxy, property: str, _domain_manager=None, **kwargs):
-        super().__init__(proxy, property, _domain_manager, **kwargs)
+    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
+        super().__init__(_proxy, _property, _domain_manager, **kwargs)
         self._available = kwargs.get("available", "")
         self._value = kwargs.get("value", "")
 
     def valid(self, required_level=2):
         _v = self.value.id if isinstance(self.value, Proxy) else self.value
-        _available = self._domain_manager.available(self._proxy.id, self._property_name, self._available)
-        ic("IsEqual:valid", _v, _available, self._value)
+        _available = self._domain_manager.available(
+            self._proxy.id, self._property_name, self._available
+        )
+        # ic("IsEqual:valid", _v, _available, self._value)
 
         if _v == self._value:
             return True
@@ -95,10 +111,198 @@ class IsEqual(Domain):
 
         return False
 
+
+# -----------------------------------------------------------------------------
+# FieldSelector
+# -----------------------------------------------------------------------------
+#  name: List           | (optional) provide another name than its type
+#  type: FieldSelector  | select this domain
+#  input: Input         | Specify property on which field inspection happen
+#  location: Point      | Filtering arrays to be only on [Point/Cell/Field]
+#  size: 1              | Number of components for available arrays
+#  initial: first       | (optional) if provided, domain will set array to prop
+#  isA:                 | (optional) filter arrays by their type
+#    - vtkDataArray     |   => Only numerical arrays
+# -----------------------------------------------------------------------------
+class FieldSelector(Domain):
+    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
+        super().__init__(_proxy, _property, _domain_manager, **kwargs)
+        self.__input_prop_name = kwargs.get("input", "self")
+        self.__input_port = kwargs.get("port", 0)
+        self.__array_location = kwargs.get("location", "Point")
+        self.__array_components = kwargs.get("size", 1)
+        self.__array_types = kwargs.get("isA", [])
+        self.__value_obj = _proxy.definition[_property].get("type", "") == "object"
+
+    def set_value(self):
+        if self._should_compute_value:
+            all_arrays = self.available()
+            if len(all_arrays):
+                if self.__value_obj:
+                    _input_proxy = None
+                    if self.__input_prop_name == "self":
+                        _input_proxy = self._proxy
+                    else:
+                        _input_proxy = self._proxy[self.__input_prop_name]
+                    array_info = all_arrays[0]
+                    _state = {
+                        "type": "Array",
+                        "source": _input_proxy.id,
+                        "port": array_info.get("port", 0),
+                        "location": array_info.get("location", "Point"),
+                        "name": array_info.get("name", 0),
+                        "components": array_info.get("components", 1),
+                    }
+                    if self.value:
+                        self.value.state = _state
+                    else:
+                        self.value = ObjectValue.create(_state)
+                else:
+                    self.value = all_arrays[0].get("value")
+                self._should_compute_value = False
+                return True
+        return False
+
+    def available(self):
+        arrays = self.get_fields()
+        result = []
+        for array in arrays:
+            result.append(
+                {
+                    # ui data
+                    "text": array.GetName(),
+                    "value": f"{self.__array_location}::{array.GetName()}",
+                    # real data
+                    "port": self.__input_port,
+                    "name": array.GetName(),
+                    "location": self.__array_location,
+                    "components": array.GetNumberOfComponents(),
+                    "type": array.GetClassName(),
+                    # "range": array.GetRange(-1) if hasattr(array, "GetRange") else None,
+                }
+            )
+        return result
+
+    def valid(self, required_level=2):
+        if self._level < required_level:
+            return True
+
+        v = self.value
+        for item in self._items:
+            if item.get("name", None) == v:
+                return True
+        return False
+
+    def get_fields(self):
+        _input_proxy = None
+        if self.__input_prop_name == "self":
+            _input_proxy = self._proxy
+        else:
+            _input_proxy = self._proxy[self.__input_prop_name]
+
+        if _input_proxy and _input_proxy.object:
+            source = _input_proxy.object
+            port = self.__input_port
+            location = self.__array_location
+            size = self.__array_components
+            types = self.__array_types
+            return handlers.ListArrays.available_arrays(source, port, location, size, types)
+
+        return []
+
+    def get_field(self):
+        array_name = self.value.name
+        for array in self.get_fields():
+            if array.GetName() == array_name:
+                return array
+
+        return None
+
+
+# -----------------------------------------------------------------------------
+# Range
+# -----------------------------------------------------------------------------
+#  name: xxxx                | (optional) provide another name than its type
+#  type: Range               | select this domain
+# -----------------------------------------------------------------------------
+#  value_range: [0, 1]       | Static range
+# -----------------------------------------------------------------------------
+#  property: PropArray       | Specify property on which an array is defined
+#  initial: [mean, min, max] | Computation to use for setting the value
+#  component: -1 (mag)       | Component to use for range computation
+# -----------------------------------------------------------------------------
+class Range(Domain):
+    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
+        super().__init__(_proxy, _property, _domain_manager, **kwargs)
+        self.__compute = kwargs.get("initial", "mean")
+        self.__prop_array = kwargs.get("property", None)
+        self.__range_component = kwargs.get("component", -1)
+        self.__static_range = kwargs.get("value_range", False)
+
+        # Declare dependency
+        if self.__prop_array:
+            # ic("Range add dep", self.__prop_array)
+            self._dependent_properties.add(self.__prop_array)
+
+    def set_value(self):
+        if self._should_compute_value:
+            data_range = self.get_range(self.__range_component)
+            if data_range is None:
+                return False
+
+            _v = 0
+            if self.__compute == "mean":
+                _v = (data_range[0] + data_range[1]) * 0.5
+            elif self.__compute == "min":
+                _v = data_range[0]
+            elif self.__compute == "max":
+                _v = data_range[1]
+            else:
+                print(
+                    f"Range domain can't compute {self.__compute}. Expect 'mean', 'min' or 'max' instead."
+                )
+
+            self.value = _v
+            # ic("Set Range value", data_range, _v)
+            self._should_compute_value = False
+            return True
+        return False
+
+    def available(self):
+        return self.get_range(self.__range_component)
+
+    def valid(self, required_level=2):
+        if self._level < required_level:
+            return True
+
+        _v = self.value
+        _range = self.available()
+        return _v >= _range[0] and _v <= _range[1]
+
+    def get_range(self, component=-1):
+        if self.__static_range:
+            return self.__static_range
+
+        # Get array from FieldSelector
+        _prop_domains = self._domain_manager.get(self._proxy.id).get(self.__prop_array)
+        if _prop_domains:
+            for domain in _prop_domains.values():
+                if isinstance(domain, FieldSelector):
+                    field = domain.get_field()
+                    if field:
+                        # ic("Range", field.GetRange(component))
+                        return field.GetRange(component)
+
+        return None
+
+
 # -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
 
+
 def register_domains():
     Domain.register("ProxyBuilder", ProxyBuilder)
     Domain.register("IsEqual", IsEqual)
+    Domain.register("FieldSelector", FieldSelector)
+    Domain.register("Range", Range)

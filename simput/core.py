@@ -5,12 +5,9 @@ import xml.etree.ElementTree as ET
 from simput import filters
 from simput import ui
 
-try:
-    from yaml import CDumper as YAMLDumper
-except ImportError:
-    from yaml import Dumper as YAMLDumper
-
-from icecream import ic
+# from icecream import ic
+from icecream import install
+install()
 
 # -----------------------------------------------------------------------------
 # Generic ID generator
@@ -29,32 +26,30 @@ def is_equal(a, b):
     # might need some deeper investigation
     return a == b
 
+
 ###############################################################################
 # "Remoting" layers
 ###############################################################################
 
 # -----------------------------------------------------------------------------
-# ObjectHelper
+# ObjectValue
 # -----------------------------------------------------------------------------
 # Light weight object with convinient API that can be easily serialized and
 # shared across locations.
 # -----------------------------------------------------------------------------
-class ObjectHelper:
+class ObjectValue:
     __available_types = {}
 
     @staticmethod
-    def create(state):
-        if isinstance(state, str):
-            state = json.loads(state)
-        if isinstance(state, dict):
-            name = state.get("type")
-            return ObjectHelper.__available_types[name](**state)
+    def create(value_type, state):
+        if value_type in ObjectValue.__available_types:
+            return ObjectValue.__available_types[value_type](state)
 
-        raise TypeError(f"Could not find ObjectHelper from {state}")
+        raise TypeError(f"Could not find ObjectValue from {value_type}")
 
     @staticmethod
     def register(name, constructor):
-        ObjectHelper.__available_types(name, constructor)
+        ObjectValue.__available_types[name] = constructor
 
 
 # -----------------------------------------------------------------------------
@@ -126,7 +121,7 @@ class Proxy:
             _type = _prop_def.get("type", "")
             if _prop_name in kwargs:
                 self.set_property(_prop_name, kwargs[_prop_name])
-            elif _type == "object":
+            elif _type.startswith("value::"):
                 self.set_property(_prop_name, _init_def)
             elif isinstance(_init_def, dict):
                 print("+++ Don't know how to deal with domain yet", _init_def)
@@ -196,8 +191,8 @@ class Proxy:
         if value is not None:
             if prop_type == "proxy" and not isinstance(value, str):
                 safe_value = value.id
-            if prop_type == "object" and not isinstance(value, ObjectHelper):
-                safe_value = ObjectHelper.create(value)
+            if prop_type.startswith("value::") and not isinstance(value, ObjectValue):
+                safe_value = ObjectValue.create(prop_type, value)
 
         # check if change
         change_detected = False
@@ -213,7 +208,6 @@ class Proxy:
         if change_detected:
             self._obj_manager.dirty_ids.add(self._id)
 
-        print("set_property", name, safe_value)
         self._emit(
             "update",
             modified=change_detected,
@@ -330,7 +324,7 @@ class Proxy:
             if prop_name.startswith("_"):
                 continue
 
-            if prop_def.get("type", "") == "object":
+            if prop_def.get("type", "").startswith("value::"):
                 _obj = self._properties.get(prop_name, None)
                 if _obj:
                     _properties[prop_name] = _obj.state
@@ -422,12 +416,12 @@ class Domain:
 
         return domains
 
-    def __init__(self, proxy: Proxy, property: str, _domain_manager=None, **kwargs):
+    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
         self._domain_manager = _domain_manager
-        self._proxy = proxy
-        self._property_name = property
+        self._proxy = _proxy
+        self._property_name = _property
         self._dependent_properties = set([self._property_name])
-        self._need_set = False
+        self._need_set = "initial" in kwargs
         self._proxy.on(self._on_proxy_change)
         self._level = kwargs.get("level", 0)
         self._message = kwargs.get("message", str(__class__))
@@ -440,14 +434,17 @@ class Domain:
         self, topic, modified=False, properties_dirty=[], properties_change=[], **kwargs
     ):
         dependency_count = len(set(properties_dirty).union(self._dependent_properties))
-        if self._domain_manager and dependency_count:
-            self._domain_manager.dirty(self._proxy.id)
+        # if self._domain_manager and dependency_count:
+        #     self._domain_manager.dirty(self._proxy.id)
+
+        # print("domain dirty/dep", properties_dirty, self._dependent_properties)
 
         if self._need_set:
             need_compute = topic in ["commit", "reset"] and dependency_count
             need_compute |= topic == "update" and dependency_count
-            if need_compute:
-                self.set_value()
+            if need_compute and self.set_value():
+                ic("Set value", self._proxy.id, self._property_name)
+                self._need_set = False
 
     # def validate(self, value):
     #     return value
@@ -490,6 +487,7 @@ class Domain:
 
     def hints(self):
         return []
+
 
 # -----------------------------------------------------------------------------
 # ProxyManagerLifeCycleListener
@@ -1105,7 +1103,7 @@ class DomainManager(ProxyManagerLifeCycleListener):
     def get_dirty_domains(self):
         messages = []
         for _id in self._dirty_ids:
-            msg = { "id": _id, "domains": self.domains(_id) }
+            msg = {"id": _id, "domains": self.domains(_id)}
             messages.append(msg)
         return messages
 
@@ -1123,7 +1121,7 @@ class DomainManager(ProxyManagerLifeCycleListener):
         domain = prop_domains.get(_domain_name, None)
         if domain:
             return domain.valid()
-        return True # no domain == valid
+        return True  # no domain == valid
 
     def domains(self, _id):
         output = {}
@@ -1136,7 +1134,7 @@ class DomainManager(ProxyManagerLifeCycleListener):
                 available = domain_inst.available()
                 valid = domain_inst.valid()
                 if available or not valid:
-                    prop_info[domain_name] = { "available": available, "valid": valid }
+                    prop_info[domain_name] = {"available": available, "valid": valid}
 
             if prop_info or hints:
                 prop_info["hints"] = hints
@@ -1144,12 +1142,16 @@ class DomainManager(ProxyManagerLifeCycleListener):
 
         return output
 
+    def get(self, _id):
+        return self._id_map.get(_id, {})
+
     def proxy_create_before_commit(self, proxy_type, initial_values, proxy, **kwargs):
         domains = Domain.create(proxy, self)
         self._id_map[proxy.id] = domains
 
     def proxy_delete_before(self, proxy_id, trigger_modified, **kwargs):
         del self._id_map[proxy_id]
+
 
 ###############################################################################
 # Operators
@@ -1168,7 +1170,7 @@ def is_valid_value(v):
             if not is_valid_value(item):
                 return False
         return True
-    if isinstance(v, ObjectHelper):
+    if isinstance(v, ObjectValue):
         return True
 
     return False

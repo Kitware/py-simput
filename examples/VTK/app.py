@@ -1,4 +1,3 @@
-import asyncio
 from pywebvue import App
 from simput.core import ProxyManager, UIManager, ObjectFactory, fetch
 from simput.ui.web import VuetifyResolver

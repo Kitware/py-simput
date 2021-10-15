@@ -7,6 +7,27 @@ class FieldRangeHandler:
 class ListArrays:
     @staticmethod
     def available(source, port, location, size, isA):
+        arrays = ListArrays.available_arrays(source, port, location, size, isA)
+        result = []
+        for array in arrays:
+            result.append(
+                {
+                    # ui data
+                    "text": array.GetName(),
+                    "value": f"{location}::{array.GetName()}",
+                    # real data
+                    "port": port,
+                    "name": array.GetName(),
+                    "location": location,
+                    "components": array.GetNumberOfComponents(),
+                    "type": array.GetClassName(),
+                    # "range": array.GetRange(-1) if hasattr(array, "GetRange") else None,
+                }
+            )
+        return result
+
+    @staticmethod
+    def available_arrays(source, port, location, size, isA):
         if source is None:
             return []
 
@@ -18,12 +39,14 @@ class ListArrays:
             return []
 
         if dataset.IsA("vtkMultiBlockDataSet"):
-            return ListArrays.available_multiblock(dataset, port, location, size, isA)
+            return ListArrays.available_multiblock_arrays(
+                dataset, port, location, size, isA
+            )
 
-        return ListArrays.available_dataset(dataset, port, location, size, isA)
+        return ListArrays.available_dataset_arrays(dataset, port, location, size, isA)
 
     @staticmethod
-    def available_multiblock(source, port, location, size, isA):
+    def available_multiblock_arrays(source, port, location, size, isA):
         result = []
         nb_blocks = source.GetNumberOfBlocks()
         for i in range(nb_blocks):
@@ -32,9 +55,11 @@ class ListArrays:
                 continue
 
             if block.IsA("vtkDataSet"):
-                result += ListArrays.available_dataset(block, port, location, size, isA)
+                result += ListArrays.available_dataset_arrays(
+                    block, port, location, size, isA
+                )
             elif block.IsA("vtkMultiBlockDataSet"):
-                result += ListArrays.available_multiblock(
+                result += ListArrays.available_multiblock_arrays(
                     block, port, location, size, isA
                 )
             else:
@@ -43,7 +68,7 @@ class ListArrays:
         return result
 
     @staticmethod
-    def available_dataset(source, port, location, size, isA):
+    def available_dataset_arrays(source, port, location, size, isA):
         result = []
         locations = []
         if isinstance(location, str):
@@ -74,21 +99,7 @@ class ListArrays:
                         keep = False
 
                 if keep:
-                    result.append(
-                        {
-                            # ui data
-                            "text": name,
-                            "value": f"{port}::{loc}::{name}",
-                            # real data
-                            "name": name,
-                            "location": loc,
-                            "components": nb_comp,
-                            "type": array.GetClassName(),
-                            "range": array.GetRange(-1)
-                            if hasattr(array, "GetRange")
-                            else None,
-                        }
-                    )
+                    result.append(array)
 
         # print("-"*80)
         # print("Array extract dataset...")

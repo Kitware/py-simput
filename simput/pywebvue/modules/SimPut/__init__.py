@@ -3,7 +3,7 @@ import os
 from wslink import register as exportRpc
 from wslink.websocket import LinkProtocol
 
-from icecream import ic
+# from icecream import ic
 
 import json
 
@@ -23,6 +23,7 @@ vue_use = ["VueSimput"]
 
 MANAGERS = {}
 
+
 def get_manager(_id, _type):
     handler = MANAGERS.get(_id, None)
     if handler is None:
@@ -31,6 +32,7 @@ def get_manager(_id, _type):
 
     return handler.get(_type)
 
+
 def get_ui_manager(_id):
     return get_manager(_id, "ui_manager")
 
@@ -38,7 +40,9 @@ def get_ui_manager(_id):
 def get_domains_manager(_id):
     return get_manager(_id, "domains_manager")
 
+
 # -----------------------------------------------------------------------------
+
 
 class SimputHelper:
     def __init__(self, app, ui_manager, domains_manager=None, namespace="simput"):
@@ -96,12 +100,12 @@ class SimputHelper:
         return change_set
 
     def apply(self):
-        ic("apply")
+        # ic("apply")
         self._ui_manager.proxymanager.commit_all()
         self.reset()
 
     def reset(self):
-        ic("reset")
+        # ic("reset")
         ids_to_update = list(self._pending_changeset.keys())
         self._pending_changeset = {}
         self._app.set(self.changecount_key, 0)
@@ -114,8 +118,8 @@ class SimputHelper:
             self.push(id=_id, domains=_id)
 
     def refresh(self, id=0, property=""):
-        ic("refresh")
-        print("refresh not implemented...")
+        pass
+        # ic("refresh")
         # if self._ui_manager.proxymanager.refresh(id, property):
         #     _props = self._ui_manager.proxymanager.get(id).get("properties", {})
         #     _prop_to_push = {property: _props[property]}
@@ -137,7 +141,7 @@ class SimputHelper:
         self._app.protocol_call("simput.push.event", topic, **kwargs)
 
     def update(self, change_set):
-        ic("update")
+        # ic("update")
         for change in change_set:
             _id = change.get("id")
             _name = change.get("name")
@@ -207,7 +211,7 @@ class SimputProtocol(LinkProtocol):
 
     @exportRpc("simput.data.get")
     def get_data(self, manager_id, id):
-        ic("get_data", id)
+        # ic("get_data", id)
         uim = get_ui_manager(manager_id)
         msg = {"id": id, "data": uim.data(id)}
         self.send_message(msg)
@@ -215,7 +219,7 @@ class SimputProtocol(LinkProtocol):
 
     @exportRpc("simput.ui.get")
     def get_ui(self, manager_id, type):
-        ic("get_ui", type)
+        # ic("get_ui", type)
         uim = get_ui_manager(manager_id)
         msg = {"type": type, "ui": uim.ui(type)}
         self.send_message(msg)
@@ -223,12 +227,14 @@ class SimputProtocol(LinkProtocol):
 
     @exportRpc("simput.domains.get")
     def get_domains(self, manager_id, id):
-        ic("get_domains", id)
-        msg = {"id": id, "domains": {} }
+        # ic("get_domains", id)
+        msg = {"id": id, "domains": {}}
 
         domains_manager = get_domains_manager(manager_id)
         if domains_manager:
             msg["domains"] = domains_manager.domains(id)
+
+        # ic("domain", msg)
 
         self.send_message(msg)
         return msg
@@ -241,7 +247,6 @@ class SimputProtocol(LinkProtocol):
     def emit(self, topic, **kwargs):
         event = {"topic": topic, **kwargs}
         self.publish("simput.event", event)
-
 
     @exportRpc("simput.push.event")
     def emit(self, topic, **kwargs):
@@ -270,9 +275,18 @@ def setup(app, **kwargs):
 
 def register_manager(ui_manager, domains_manager=None):
     global MANAGERS
-    MANAGERS[ui_manager.id] = {"ui_manager": ui_manager, "domains_manager": domains_manager}
+    MANAGERS[ui_manager.id] = {
+        "ui_manager": ui_manager,
+        "domains_manager": domains_manager,
+    }
 
 
-def create_helper(ui_manager, domains_manager=None, namespace="simput",):
+def create_helper(
+    ui_manager,
+    domains_manager=None,
+    namespace="simput",
+):
     register_manager(ui_manager, domains_manager)
-    return SimputHelper(APP, ui_manager, namespace=namespace, domains_manager=domains_manager)
+    return SimputHelper(
+        APP, ui_manager, namespace=namespace, domains_manager=domains_manager
+    )

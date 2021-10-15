@@ -5,7 +5,7 @@
 
 _has_data_representation:
   Representation:
-    _ui: object
+    _ui: proxy
     size: 1
     type: proxy
     domains:
@@ -111,26 +111,20 @@ vtkContourFilter:
         kwargs:
           idx: 0
           connection: 0
-    type: string
+    type: value::Array
     size: 1
-    # initial:
-    #   type: FieldSelector
-    # domains:
-    #   - name: List
-    #     type: FieldSelector
-    #     property: Input
-    #     location: Point
-    #     size: 1
-    #     isA:
-    #       - vtkDataArray
+    domains:
+      - name: List
+        type: FieldSelector
+        input: Input
+        location: Point
+        size: 1
+        initial: first
+        isA:
+          - vtkDataArray
   Contours:
     type: float64
     size: 1
-    # initial:
-    #   type: RangeMean
-    #   property: ContourBy
-    #   constraint: List
-    #   refresh: auto
     _set:
       - method: SetNumberOfContours
         filter: to_size
@@ -139,6 +133,9 @@ vtkContourFilter:
         kwargs:
           start_index: 0
     domains:
+      - type: Range
+        property: ContourBy
+        initial: mean
       - type: UI
         properties:
           layout: vertical
@@ -197,6 +194,7 @@ vtkClipDataSet:
         kwargs:
           idx: 0
           connection: 0
+          port: 0
     type: string
     size: 1
     # initial:
@@ -272,9 +270,9 @@ Representation:
   Opacity:
     size: 1
     type: float32
-    domains:
-      - type: Range
-        value_range: [0, 1]
+    # domains:
+    #   - type: Range
+    #     value_range: [0, 1]
   Visibility:
     size: 1
     type: uint8

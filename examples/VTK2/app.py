@@ -1,7 +1,7 @@
-import asyncio
 from pywebvue import App
 from simput.core import ProxyManager, UIManager, ObjectFactory, DomainManager, fetch
 from simput.domains import register_domains
+from simput.values import register_values
 from simput.ui.web import VuetifyResolver
 from simput.pywebvue.modules import SimPut
 from pywebvue.modules import VTK
@@ -63,6 +63,7 @@ vtk_factory.register("vtkPlane", vtkPlane)
 
 # Automatically create proxy from definition
 register_domains()
+register_values()
 
 pxm = ProxyManager(vtk_factory)
 ui_manager = UIManager(pxm, VuetifyResolver())
@@ -75,7 +76,7 @@ ui_manager.load_language(yaml_content=app.txt("./model.yaml"))
 ui_manager.load_ui(xml_content=app.txt("./ui.xml"))
 
 # Setup network handlers + state properties
-simput = SimPut.create_helper(ui_manager)
+simput = SimPut.create_helper(ui_manager, domains_manager)
 simput.auto_update = True
 
 # Fill drop down with available objects

@@ -6782,42 +6782,32 @@ var modules_es_array_slice = __webpack_require__("678b");
       return ((_TYPES$this$type2 = TYPES[this.type]) === null || _TYPES$this$type2 === void 0 ? void 0 : _TYPES$this$type2.convert) || FALLBACK_CONVERT;
     },
     computedMin: function computedMin() {
-      /* eslint-disable no-unused-expressions */
+      var _this$domains, _this$domains$this$na5, _this$domains$this$na6;
+
       if (this.min != null) {
         return this.min;
-      } // const { property, domain } = this.domains()?.[this.name]?.Range?.available || {};
-      // const selectedArray = this.properties()?.[property];
-      // const arrays = this.domains()?.[property]?.[domain]?.available || [];
-      // for (let i = 0; i < arrays.length; i++) {
-      //   const array = arrays[i];
-      //   if (array.value === selectedArray) {
-      //     console.log('Found array range', array.range);
-      //     return array.range[0];
-      //   }
-      // }
+      }
 
+      var dataRange = (_this$domains = this.domains()) === null || _this$domains === void 0 ? void 0 : (_this$domains$this$na5 = _this$domains[this.name]) === null || _this$domains$this$na5 === void 0 ? void 0 : (_this$domains$this$na6 = _this$domains$this$na5.Range) === null || _this$domains$this$na6 === void 0 ? void 0 : _this$domains$this$na6.available;
 
-      console.log('range failed', this.domains()[this.name]); // TODO - FIXME use dynamic domains
+      if (dataRange) {
+        return dataRange[0];
+      }
 
       return 0;
     },
     computedMax: function computedMax() {
-      /* eslint-disable no-unused-expressions */
+      var _this$domains2, _this$domains2$this$n, _this$domains2$this$n2;
+
       if (this.max != null) {
         return this.max;
-      } // FIXME should always be dynamic...
-      // const { property, domain } = this.domains()?.[this.name]?.Range?.available || {};
-      // const selectedArray = this.properties()?.[property];
-      // const arrays = this.domains()?.[property]?.[domain]?.available || [];
-      // for (let i = 0; i < arrays.length; i++) {
-      //   const array = arrays[i];
-      //   if (array.value === selectedArray) {
-      //     console.log('Found array range', array.range);
-      //     return array.range[1];
-      //   }
-      // }
-      // Dynamic domains
+      }
 
+      var dataRange = (_this$domains2 = this.domains()) === null || _this$domains2 === void 0 ? void 0 : (_this$domains2$this$n = _this$domains2[this.name]) === null || _this$domains2$this$n === void 0 ? void 0 : (_this$domains2$this$n2 = _this$domains2$this$n.Range) === null || _this$domains2$this$n2 === void 0 ? void 0 : _this$domains2$this$n2.available;
+
+      if (dataRange) {
+        return dataRange[1];
+      }
 
       return 100;
     },
@@ -6885,7 +6875,6 @@ var modules_es_array_slice = __webpack_require__("678b");
     },
     update: function update() {
       var component = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      // console.log('update', component, this.size);
       var value = component ? this.model[component - 1] : this.model; // must test against bool since it can be a string in case of error
 
       if (this.rule(value) === true) {

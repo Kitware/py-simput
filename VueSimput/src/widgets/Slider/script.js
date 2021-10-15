@@ -87,46 +87,25 @@ export default {
       return TYPES[this.type]?.convert || FALLBACK_CONVERT;
     },
     computedMin() {
-      /* eslint-disable no-unused-expressions */
       if (this.min != null) {
         return this.min;
       }
 
-      // const { property, domain } = this.domains()?.[this.name]?.Range?.available || {};
-      // const selectedArray = this.properties()?.[property];
-      // const arrays = this.domains()?.[property]?.[domain]?.available || [];
-      // for (let i = 0; i < arrays.length; i++) {
-      //   const array = arrays[i];
-      //   if (array.value === selectedArray) {
-      //     console.log('Found array range', array.range);
-      //     return array.range[0];
-      //   }
-      // }
-
-      console.log('range failed', this.domains()[this.name]);
-      // TODO - FIXME use dynamic domains
+      const dataRange = this.domains()?.[this.name]?.Range?.available;
+      if (dataRange) {
+        return dataRange[0];
+      }
       return 0;
     },
     computedMax() {
-      /* eslint-disable no-unused-expressions */
       if (this.max != null) {
         return this.max;
       }
 
-      // FIXME should always be dynamic...
-
-      // const { property, domain } = this.domains()?.[this.name]?.Range?.available || {};
-      // const selectedArray = this.properties()?.[property];
-      // const arrays = this.domains()?.[property]?.[domain]?.available || [];
-      // for (let i = 0; i < arrays.length; i++) {
-      //   const array = arrays[i];
-      //   if (array.value === selectedArray) {
-      //     console.log('Found array range', array.range);
-      //     return array.range[1];
-      //   }
-      // }
-
-      // Dynamic domains
+      const dataRange = this.domains()?.[this.name]?.Range?.available;
+      if (dataRange) {
+        return dataRange[1];
+      }
 
       return 100;
     },
@@ -174,7 +153,6 @@ export default {
       return {};
     },
     update(component = 0) {
-      // console.log('update', component, this.size);
       const value = component ? this.model[component - 1] : this.model;
       // must test against bool since it can be a string in case of error
       if (this.rule(value) === true) {
