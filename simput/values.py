@@ -1,5 +1,6 @@
 from simput.core import ObjectValue
 
+
 class Array(ObjectValue):
     def __init__(self, state_value):
         self._array_location = None
@@ -32,9 +33,11 @@ class Array(ObjectValue):
     def name(self, value):
         self._array_name = value
 
+
 # -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
+
 
 def register_values():
     ObjectValue.register("value::Array", Array)

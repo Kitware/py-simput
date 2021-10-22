@@ -12,7 +12,7 @@
     <ui id="vtkContourFilter">
         <input name="ContourBy" />
         <input name="Contours" allowRefresh="" />
-        <row>
+        <row class="my-3">
             <input name="ComputeScalars" />
             <input name="ComputeGradients" />
             <input name="ComputeNormals" />

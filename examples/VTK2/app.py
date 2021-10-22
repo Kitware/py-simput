@@ -1,5 +1,11 @@
 from pywebvue import App
-from simput.core import ProxyManager, UIManager, ObjectFactory, DomainManager, fetch
+from simput.core import (
+    ProxyManager,
+    UIManager,
+    ObjectFactory,
+    ProxyDomainManager,
+    fetch,
+)
 from simput.domains import register_domains
 from simput.values import register_values
 from simput.ui.web import VuetifyResolver
@@ -14,8 +20,6 @@ from vtkmodules.vtkFiltersSources import (
 )
 from vtkmodules.vtkFiltersCore import vtkContourFilter
 from vtkHelper import View, Representation, Diskout
-
-from icecream import ic
 
 # -----------------------------------------------------------------------------
 # App initialization
@@ -67,16 +71,16 @@ register_values()
 
 pxm = ProxyManager(vtk_factory)
 ui_manager = UIManager(pxm, VuetifyResolver())
-domains_manager = DomainManager()
+pdm = ProxyDomainManager()
 
-pxm.add_life_cycle_listener(domains_manager)
+pxm.add_life_cycle_listener(pdm)
 pxm.load_model(yaml_content=app.txt("./model.yaml"))
 
 ui_manager.load_language(yaml_content=app.txt("./model.yaml"))
 ui_manager.load_ui(xml_content=app.txt("./ui.xml"))
 
 # Setup network handlers + state properties
-simput = SimPut.create_helper(ui_manager, domains_manager)
+simput = SimPut.create_helper(ui_manager, pdm)
 simput.auto_update = True
 
 # Fill drop down with available objects
@@ -108,7 +112,6 @@ def update_sources(*args, **kwargs):
 
 
 def update_view(*args, **kwargs):
-    ic("update_view")
     app.set("view", VTK.scene(view.render_window))
     app.set("exportContent", None)
 
@@ -119,7 +122,7 @@ def update_view(*args, **kwargs):
 @app.trigger("create")
 def create_object(name, type):
     obj = pxm.create(type, _name=name)
-    fetch(obj, list(obj.get_properties().keys()))
+    fetch(obj, fetch_all=True)
     app.set("activeSourceId", obj.id)
 
 
@@ -130,10 +133,8 @@ def create_object(name, type):
 def create_filter(name, type):
     input = app.get("activeSourceId")
     if input:
-        print("create filter with input - begin", input)
         filter = pxm.create(type, _name=name, Input=input)
-        fetch(filter, list(filter.get_properties().keys()))
-        print("create filter with input - end", filter)
+        fetch(filter, fetch_all=True)
         app.set("activeSourceId", filter.id)
 
 

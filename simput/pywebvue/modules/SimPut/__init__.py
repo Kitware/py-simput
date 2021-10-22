@@ -100,12 +100,13 @@ class SimputHelper:
         return change_set
 
     def apply(self):
-        # ic("apply")
         self._ui_manager.proxymanager.commit_all()
+
+        # Make sure reset don't send things twice
+        self._pending_changeset = {}
         self.reset()
 
     def reset(self):
-        # ic("reset")
         ids_to_update = list(self._pending_changeset.keys())
         self._pending_changeset = {}
         self._app.set(self.changecount_key, 0)
@@ -118,8 +119,7 @@ class SimputHelper:
             self.push(id=_id, domains=_id)
 
     def refresh(self, id=0, property=""):
-        pass
-        # ic("refresh")
+        print("refresh +++ TODO")
         # if self._ui_manager.proxymanager.refresh(id, property):
         #     _props = self._ui_manager.proxymanager.get(id).get("properties", {})
         #     _prop_to_push = {property: _props[property]}
@@ -141,7 +141,6 @@ class SimputHelper:
         self._app.protocol_call("simput.push.event", topic, **kwargs)
 
     def update(self, change_set):
-        # ic("update")
         for change in change_set:
             _id = change.get("id")
             _name = change.get("name")
@@ -157,13 +156,54 @@ class SimputHelper:
         self._app.set(self.changeset_key, self.changeset)
 
         self._ui_manager.proxymanager.update(change_set)
-        if self._domains_manager and self._domains_manager.has_dirty():
-            for msg in self._domains_manager.get_dirty_domains():
-                self._app.protocol_call("simput.message.push", msg)
-            self._domains_manager.clear_dirty()
+        if self._domains_manager:
+            change_detected = 1
+            all_ids = set()
+            data_ids = set()
+
+            # Execute domains
+            while change_detected:
+                change_detected = 0
+                with self._domains_manager.dirty_ids() as dirty_ids:
+                    # print("Dirty ids", dirty_ids)
+                    all_ids.update(dirty_ids)
+                    for _id in dirty_ids:
+                        # print("domain::apply", _id)
+                        delta = self._domains_manager.get(_id).apply()
+                        change_detected += delta
+                        if delta:
+                            data_ids.add(_id)
+
+            # Push any changed state in domains
+            for _id in all_ids:
+                # print("domain::push", _id)
+                # print("#" * 4, "update", _id)
+                self._domains_manager.clean(_id)
+                self._app.protocol_call(
+                    "simput.message.push",
+                    {
+                        "id": _id,
+                        "domains": self._domains_manager.get(_id).state,
+                    },
+                )
+
+            # print(">"*30, "domain::apply > push::data")
+            for _id in data_ids:
+                # print("domain >>> data::push", _id)
+                # print("#" * 4, "update", _id)
+                self._app.protocol_call(
+                    "simput.message.push",
+                    {
+                        "id": _id,
+                        "data": self._ui_manager.data(_id),
+                    },
+                )
+            # print("<"*30, "domain::apply > push::data")
 
         if self._auto_update:
+            # print("-" * 30, "Before auto apply")
             self.apply()
+            # print("-" * 30, "After auto apply")
 
     @property
     def has_changes(self):
@@ -195,6 +235,10 @@ class SimputHelper:
 
 
 class SimputProtocol(LinkProtocol):
+    def __init__(self):
+        super().__init__()
+        self.net_cache_domains = {}
+
     @exportRpc("simput.push")
     def push(self, manager_id, id=None, type=None):
         uim = get_ui_manager(manager_id)
@@ -205,8 +249,6 @@ class SimputProtocol(LinkProtocol):
         if type is not None:
             message.update({"ui": uim.ui(type)})
 
-        print(json.dumps(message, indent=2))
-
         self.publish("simput.push", message)
 
     @exportRpc("simput.data.get")
@@ -214,6 +256,9 @@ class SimputProtocol(LinkProtocol):
         # ic("get_data", id)
         uim = get_ui_manager(manager_id)
         msg = {"id": id, "data": uim.data(id)}
+        # print("#" * 4, "get_data", id)
+        # print(json.dumps(msg, indent=2))
+        # print("~"*60)
         self.send_message(msg)
         return msg
 
@@ -222,31 +267,35 @@ class SimputProtocol(LinkProtocol):
         # ic("get_ui", type)
         uim = get_ui_manager(manager_id)
         msg = {"type": type, "ui": uim.ui(type)}
+        # print("#" * 4, "get_ui", type)
         self.send_message(msg)
         return msg
 
     @exportRpc("simput.domains.get")
     def get_domains(self, manager_id, id):
-        # ic("get_domains", id)
         msg = {"id": id, "domains": {}}
 
         domains_manager = get_domains_manager(manager_id)
         if domains_manager:
-            msg["domains"] = domains_manager.domains(id)
-
-        # ic("domain", msg)
+            domains_manager.clean(id)
+            msg["domains"] = domains_manager.get(id).state
 
         self.send_message(msg)
         return msg
 
     @exportRpc("simput.message.push")
     def send_message(self, message):
+        # Cache domain to prevent network call
+        # when not needed. (optional)
+        if "domains" in message:
+            _id = message.get("id")
+            content = self.net_cache_domains.get(_id)
+            to_send = json.dumps(message)
+            if content == to_send:
+                return
+            self.net_cache_domains[_id] = to_send
+        # - end
         self.publish("simput.push", message)
-
-    @exportRpc("simput.push.event")
-    def emit(self, topic, **kwargs):
-        event = {"topic": topic, **kwargs}
-        self.publish("simput.event", event)
 
     @exportRpc("simput.push.event")
     def emit(self, topic, **kwargs):

@@ -5604,6 +5604,8 @@ var utils_DataManager = /*#__PURE__*/function () {
         for (var _i = 0; _i < ids.length; _i++) {
           if (_this.cache.data[ids[_i]]) {
             if (action === 'change') {
+              console.log('getData from data-change', ids[_i]);
+
               _this.getData(ids[_i], true);
             }
           }
@@ -5615,6 +5617,7 @@ var utils_DataManager = /*#__PURE__*/function () {
       var id = _ref5.id,
           name = _ref5.name;
       var value = _this.cache.data[id].properties[name];
+      console.log(' > dirty', id, name);
 
       _this.wsClient.getRemote().PyWebVue.trigger("".concat(_this.namespace, "Update"), [[{
         id: id,
@@ -5667,6 +5670,7 @@ var utils_DataManager = /*#__PURE__*/function () {
       var data = this.cache.data[id];
 
       if ((!data || forceFetch) && !this.pending[id]) {
+        console.log(' > fetch data', id, forceFetch);
         this.pending[id] = true;
         this.wsClient.getRemote().PyWebVue.trigger("".concat(this.namespace, "Fetch"), [], {
           id: id
@@ -5682,6 +5686,7 @@ var utils_DataManager = /*#__PURE__*/function () {
       var domains = this.cache.domains[id];
 
       if ((!domains || forceFetch) && !this.pending[id]) {
+        console.log(' > fetch domain', id, forceFetch);
         this.pending[id] = true;
         this.wsClient.getRemote().PyWebVue.trigger("".concat(this.namespace, "Fetch"), [], {
           domains: id
@@ -5697,6 +5702,7 @@ var utils_DataManager = /*#__PURE__*/function () {
       var ui = this.cache.ui[type];
 
       if ((!ui || forceFetch) && !this.pending[type]) {
+        console.log(' > fetch ui', type, forceFetch);
         this.pending[type] = true;
         this.wsClient.getRemote().PyWebVue.trigger("".concat(this.namespace, "Fetch"), [], {
           type: type
@@ -5713,6 +5719,7 @@ var utils_DataManager = /*#__PURE__*/function () {
   }, {
     key: "refresh",
     value: function refresh(id, name) {
+      console.log(' > refresh', id, name);
       this.wsClient.getRemote().PyWebVue.trigger("".concat(this.namespace, "Refresh"), [id, name]);
     }
   }]);

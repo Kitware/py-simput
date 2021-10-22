@@ -64,6 +64,7 @@ export class DataManager {
           for (let i = 0; i < ids.length; i++) {
             if (this.cache.data[ids[i]]) {
               if (action === 'change') {
+                console.log('getData from data-change', ids[i]);
                 this.getData(ids[i], true);
               }
             }
@@ -73,6 +74,7 @@ export class DataManager {
 
     this.onDirty = ({ id, name }) => {
       const value = this.cache.data[id].properties[name];
+      console.log(' > dirty', id, name);
       this.wsClient
         .getRemote()
         .PyWebVue.trigger(`${this.namespace}Update`, [[{ id, name, value }]]);
@@ -114,6 +116,7 @@ export class DataManager {
     const data = this.cache.data[id];
 
     if ((!data || forceFetch) && !this.pending[id]) {
+      console.log(' > fetch data', id, forceFetch);
       this.pending[id] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { id });
     }
@@ -125,6 +128,7 @@ export class DataManager {
     const domains = this.cache.domains[id];
 
     if ((!domains || forceFetch) && !this.pending[id]) {
+      console.log(' > fetch domain', id, forceFetch);
       this.pending[id] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { domains: id });
     }
@@ -136,6 +140,7 @@ export class DataManager {
     const ui = this.cache.ui[type];
 
     if ((!ui || forceFetch) && !this.pending[type]) {
+      console.log(' > fetch ui', type, forceFetch);
       this.pending[type] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { type });
     }
@@ -148,6 +153,7 @@ export class DataManager {
   }
 
   refresh(id, name) {
+    console.log(' > refresh', id, name);
     this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Refresh`, [id, name]);
   }
 }

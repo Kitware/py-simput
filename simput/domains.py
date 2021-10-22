@@ -1,4 +1,4 @@
-from simput.core import ObjectValue, Proxy, Domain, ProxyManager
+from simput.core import ObjectValue, Proxy, PropertyDomain, ProxyDomain, ProxyManager
 from simput import handlers
 
 # from icecream import ic
@@ -25,7 +25,7 @@ from simput import handlers
 #      type: Representation  |              - proxy type
 #  bind: Input               | set self to SubProxy.Input property (optional)
 # -----------------------------------------------------------------------------
-class ProxyBuilder(Domain):
+class ProxyBuilder(PropertyDomain):
     def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
         super().__init__(_proxy, _property, _domain_manager, **kwargs)
         self._items = kwargs.get("values", [])
@@ -89,7 +89,7 @@ class ProxyBuilder(Domain):
 #  available: {type/name} | Which domain available list on prop to use
 #  value: Scalar          | Value that our prop needs to match to be "valid"
 # -----------------------------------------------------------------------------
-class IsEqual(Domain):
+class IsEqual(PropertyDomain):
     def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
         super().__init__(_proxy, _property, _domain_manager, **kwargs)
         self._available = kwargs.get("available", "")
@@ -97,7 +97,7 @@ class IsEqual(Domain):
 
     def valid(self, required_level=2):
         _v = self.value.id if isinstance(self.value, Proxy) else self.value
-        _available = self._domain_manager.available(
+        _available = self._proxy_domain_manager.available(
             self._proxy.id, self._property_name, self._available
         )
         # ic("IsEqual:valid", _v, _available, self._value)
@@ -124,7 +124,7 @@ class IsEqual(Domain):
 #  isA:                 | (optional) filter arrays by their type
 #    - vtkDataArray     |   => Only numerical arrays
 # -----------------------------------------------------------------------------
-class FieldSelector(Domain):
+class FieldSelector(PropertyDomain):
     def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
         super().__init__(_proxy, _property, _domain_manager, **kwargs)
         self.__input_prop_name = kwargs.get("input", "self")
@@ -206,7 +206,9 @@ class FieldSelector(Domain):
             location = self.__array_location
             size = self.__array_components
             types = self.__array_types
-            return handlers.ListArrays.available_arrays(source, port, location, size, types)
+            return handlers.ListArrays.available_arrays(
+                source, port, location, size, types
+            )
 
         return []
 
@@ -231,7 +233,7 @@ class FieldSelector(Domain):
 #  initial: [mean, min, max] | Computation to use for setting the value
 #  component: -1 (mag)       | Component to use for range computation
 # -----------------------------------------------------------------------------
-class Range(Domain):
+class Range(PropertyDomain):
     def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
         super().__init__(_proxy, _property, _domain_manager, **kwargs)
         self.__compute = kwargs.get("initial", "mean")
@@ -284,8 +286,14 @@ class Range(Domain):
             return self.__static_range
 
         # Get array from FieldSelector
-        _prop_domains = self._domain_manager.get(self._proxy.id).get(self.__prop_array)
-        if _prop_domains:
+        # print("_proxy_domain_manager", self._proxy_domain_manager)
+        # print("self._proxy.id", self._proxy.id)
+        # print("self.__prop_array", self.__prop_array)
+        # print("proxy domains", self._proxy_domain_manager.get(self._proxy.id))
+        # print("self.__prop_array", self.__prop_array)
+        _proxy_domains = self._proxy_domain_manager.get(self._proxy.id)
+        if _proxy_domains:
+            _prop_domains = _proxy_domains.get_property_domains(self.__prop_array)
             for domain in _prop_domains.values():
                 if isinstance(domain, FieldSelector):
                     field = domain.get_field()
@@ -297,12 +305,53 @@ class Range(Domain):
 
 
 # -----------------------------------------------------------------------------
+# ResetOnChange
+# -----------------------------------------------------------------------------
+#  name: xxxx                | (optional) provide another name than its type
+#  type: ResetOnChange       | select this domain
+# -----------------------------------------------------------------------------
+#  property: Property name   | When current property change reset domain on
+#  domain: Domain name/type  | property so default values could be regenerated
+# -----------------------------------------------------------------------------
+class ResetOnChange(PropertyDomain):
+    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
+        super().__init__(_proxy, _property, _domain_manager, **kwargs)
+        self.__prop_name = kwargs.get("property", None)
+        self.__domain_type = kwargs.get("domain", None)
+        self.__last_value = None
+
+    def set_value(self):
+        if self.__last_value != self.value:
+            self.__last_value = self.value
+
+            proxy_domains = self._proxy_domain_manager.get(self._proxy.id)
+
+            if not proxy_domains:
+                return False
+
+            change_count = 0
+            prop_domains = proxy_domains.get_property_domains(self.__prop_name)
+            if self.__domain_type and self.__domain_type in prop_domains:
+                prop_domains[self.__domain_type].enable_set_value()
+            else:
+                for domain in prop_domains.values():
+                    domain.enable_set_value()
+
+            for domain in prop_domains.values():
+                change_count += domain.set_value()
+
+            return change_count
+        return False
+
+
+# -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
 
 
 def register_domains():
-    Domain.register("ProxyBuilder", ProxyBuilder)
-    Domain.register("IsEqual", IsEqual)
-    Domain.register("FieldSelector", FieldSelector)
-    Domain.register("Range", Range)
+    ProxyDomain.register_property_domain("ProxyBuilder", ProxyBuilder)
+    ProxyDomain.register_property_domain("IsEqual", IsEqual)
+    ProxyDomain.register_property_domain("FieldSelector", FieldSelector)
+    ProxyDomain.register_property_domain("Range", Range)
+    ProxyDomain.register_property_domain("ResetOnChange", ResetOnChange)

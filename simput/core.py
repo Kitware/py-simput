@@ -6,8 +6,6 @@ from simput import filters
 from simput import ui
 
 # from icecream import ic
-from icecream import install
-install()
 
 # -----------------------------------------------------------------------------
 # Generic ID generator
@@ -88,12 +86,12 @@ class Proxy:
     )
 
     def __init__(
-        self, __obj_manager, __type, __object=None, _name=None, _tags=[], **kwargs
+        self, __proxy_manager, __type, __object=None, _name=None, _tags=[], **kwargs
     ):
         self._id = next(Proxy.__id_generator)
         self._name = _name or __type
-        self._mtime = __obj_manager.mtime
-        self._obj_manager = __obj_manager
+        self._mtime = __proxy_manager.mtime
+        self._proxy_manager = __proxy_manager
         self._type = __type
         self._pushed_properties = {}
         self._properties = {}
@@ -108,9 +106,9 @@ class Proxy:
         self._own = set()
 
         # Handle registration
-        self._obj_manager._id_map[self._id] = self
+        self._proxy_manager._id_map[self._id] = self
         for tag in self._tags:
-            self._obj_manager._tag_map.setdefault(tag, set()).add(self._id)
+            self._proxy_manager._tag_map.setdefault(tag, set()).add(self._id)
 
         # handle initial
         for _prop_name, _prop_def in self.definition.items():
@@ -132,7 +130,7 @@ class Proxy:
 
     @property
     def definition(self):
-        return self._obj_manager.get_definition(self._type)
+        return self._proxy_manager.get_definition(self._type)
 
     @property
     def id(self):
@@ -148,7 +146,7 @@ class Proxy:
 
     @property
     def manager(self):
-        return self._obj_manager
+        return self._proxy_manager
 
     def modified(self):
         self._mtime = self.manager.modified()
@@ -206,7 +204,7 @@ class Proxy:
         self._properties[name] = safe_value
 
         if change_detected:
-            self._obj_manager.dirty_ids.add(self._id)
+            self._proxy_manager.dirty_ids.add(self._id)
 
         self._emit(
             "update",
@@ -235,7 +233,7 @@ class Proxy:
         return self._properties
 
     def commit(self):
-        self._obj_manager.dirty_ids.discard(self._id)
+        self._proxy_manager.dirty_ids.discard(self._id)
         if self._dirty_properties:
             properties_dirty = list(self._dirty_properties)
             if self._object:
@@ -243,12 +241,16 @@ class Proxy:
 
             self._pushed_properties.update(self._properties)
             self._dirty_properties.clear()
+
+            for _sub_id in self.own:
+                self._proxy_manager.get(_sub_id).commit()
+
             self._emit("commit", properties_dirty=properties_dirty)
             return True
         return False
 
     def reset(self):
-        self._obj_manager.dirty_ids.discard(self._id)
+        self._proxy_manager.dirty_ids.discard(self._id)
         if self._dirty_properties:
             properties_dirty = list(self._dirty_properties)
             self._dirty_properties.clear()
@@ -274,11 +276,11 @@ class Proxy:
 
         if self._properties and name in self._properties:
             if "proxy" == self.definition.get(name).get("type"):
-                return self._obj_manager.get(self._properties.get(name))
+                return self._proxy_manager.get(self._properties.get(name))
 
             return self._properties[name]
 
-        ic("ERROR: __getitem__", name)
+        # ic("ERROR: __getitem__", name)
 
         raise AttributeError()
 
@@ -348,7 +350,7 @@ class Proxy:
             self.set_property(prop_name, prop_value)
 
         for tag in self._tags:
-            self._obj_manager._tag_map.setdefault(tag, set()).add(self._id)
+            self._proxy_manager._tag_map.setdefault(tag, set()).add(self._id)
 
     def remap_ids(self, id_map):
         # Update proxy dependency
@@ -379,75 +381,22 @@ class Proxy:
 # - message personalize the context in which a given domain is used to help
 #   understand why a given value is not valid.
 # -----------------------------------------------------------------------------
-class Domain:
-    __domain_availables = {}
-
-    @staticmethod
-    def register(name: str, constructor):
-        Domain.__domain_availables[name] = constructor
-
-    @staticmethod
-    def create(proxy: Proxy, _domain_manager=None):
-        domains = {}
-        definition = proxy.definition
-        for name in definition:
-            if name.startswith("_"):
-                continue
-            _prop_domains = domains.setdefault(name, {})
-            for domain_def in definition[name].get("domains", []):
-                _type = domain_def.get("type")
-                _name = domain_def.get("name", _type)
-                if _type in Domain.__domain_availables:
-                    domain_inst = Domain.__domain_availables[_type](
-                        proxy, name, _domain_manager, **domain_def
-                    )
-                    if _name not in _prop_domains:
-                        _prop_domains[_name] = domain_inst
-                    else:
-                        count = 1
-                        while f"{_name}_{count}" in _prop_domains:
-                            count += 1
-                        _prop_domains[f"{_name}_{count}"] = domain_inst
-
-                    # Try default set
-                    domain_inst.set_value()
-                else:
-                    print(f"Could not find domain of type: {_type}")
-
-        return domains
-
-    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
-        self._domain_manager = _domain_manager
+class PropertyDomain:
+    def __init__(self, _proxy: Proxy, _property: str, _proxy_domain_manager, **kwargs):
         self._proxy = _proxy
         self._property_name = _property
+        self._proxy_domain_manager = _proxy_domain_manager
         self._dependent_properties = set([self._property_name])
         self._need_set = "initial" in kwargs
-        self._proxy.on(self._on_proxy_change)
         self._level = kwargs.get("level", 0)
         self._message = kwargs.get("message", str(__class__))
         self._should_compute_value = "initial" in kwargs
 
-    def __del__(self):
-        self._proxy.off(self._on_proxy_change)
-
-    def _on_proxy_change(
-        self, topic, modified=False, properties_dirty=[], properties_change=[], **kwargs
-    ):
-        dependency_count = len(set(properties_dirty).union(self._dependent_properties))
-        # if self._domain_manager and dependency_count:
-        #     self._domain_manager.dirty(self._proxy.id)
-
-        # print("domain dirty/dep", properties_dirty, self._dependent_properties)
-
-        if self._need_set:
-            need_compute = topic in ["commit", "reset"] and dependency_count
-            need_compute |= topic == "update" and dependency_count
-            if need_compute and self.set_value():
-                ic("Set value", self._proxy.id, self._property_name)
-                self._need_set = False
-
     # def validate(self, value):
     #     return value
+
+    def enable_set_value(self):
+        self._should_compute_value = True
 
     def compute_value(self):
         return None
@@ -487,6 +436,109 @@ class Domain:
 
     def hints(self):
         return []
+
+
+# -----------------------------------------------------------------------------
+# ProxyDomain
+# -----------------------------------------------------------------------------
+# A ProxyDomain is responsible for:
+# - keeping track of all the domains attached to a given proxy
+# -----------------------------------------------------------------------------
+class ProxyDomain:
+    __prop_domain_availables = {}
+
+    @staticmethod
+    def register_property_domain(name: str, constructor):
+        ProxyDomain.__prop_domain_availables[name] = constructor
+
+    def __init__(self, _proxy, _domain_manager):
+        # print("Create domains for proxy", _proxy.id)
+        self._proxy = _proxy
+        self._domain_manager = _domain_manager
+        self._domains = {}
+        self._dirty_props = set()
+
+        # Monitor proxy change
+        _proxy.on(self._on_proxy_change)
+
+        # Build domains for given proxy
+        definition = _proxy.definition
+        _domains = self._domains
+        for name in definition:
+            if name.startswith("_"):
+                continue
+            _prop_domains = _domains.setdefault(name, {})
+            for domain_def in definition[name].get("domains", []):
+                _type = domain_def.get("type")
+                _name = domain_def.get("name", _type)
+                if _type in ProxyDomain.__prop_domain_availables:
+                    domain_inst = ProxyDomain.__prop_domain_availables[_type](
+                        _proxy, name, self._domain_manager, **domain_def
+                    )
+                    if _name not in _prop_domains:
+                        _prop_domains[_name] = domain_inst
+                    else:
+                        count = 1
+                        while f"{_name}_{count}" in _prop_domains:
+                            count += 1
+                        _prop_domains[f"{_name}_{count}"] = domain_inst
+
+                    # Try default set
+                    domain_inst.set_value()
+                else:
+                    print(f"Could not find domain of type: {_type}")
+        # print("DONE => Creating domains for proxy", _proxy.id)
+
+    def __del__(self):
+        # print("Delete Proxy Domain", self._proxy.id)
+        self._proxy.off(self._on_proxy_change)
+
+    def _on_proxy_change(
+        self, topic, modified=False, properties_dirty=[], properties_change=[], **kwargs
+    ):
+        if topic == "update":
+            # print(f"Dirty proxy {self._proxy.id} for domains")
+            self._dirty_props.update(properties_dirty)
+            self._dirty_props.update(properties_change)
+            self._domain_manager.dirty(self._proxy.id)
+
+    def apply(self, *property_names):
+        """Ask domains to set values or just 1 if property_name is provided"""
+        change_count = 0
+        selection = self._domains
+        if property_names:
+            selection = {}
+            for name in property_names:
+                selection[name] = self._domains.get(name, {})
+
+        for prop_domains in selection.values():
+            for domain in prop_domains.values():
+                if domain.set_value():
+                    change_count += 1
+
+        return change_count
+
+    def get_property_domains(self, prop_name):
+        return self._domains.get(prop_name, {})
+
+    @property
+    def state(self):
+        output = {}
+        for prop_name, prop_domains in self._domains.items():
+            prop_info = {}
+            hints = []
+
+            for domain_name, domain_inst in prop_domains.items():
+                available = domain_inst.available()
+                valid = domain_inst.valid()
+                if available or not valid:
+                    prop_info[domain_name] = {"available": available, "valid": valid}
+
+            if prop_info or hints:
+                prop_info["hints"] = hints
+                output[prop_name] = prop_info
+
+        return output
 
 
 # -----------------------------------------------------------------------------
@@ -636,9 +688,9 @@ class ProxyManager:
         Register callback when something is changing in ProxyManager.
 
         fn(topic, **kwars)
-        => topic='create' | ids=[]
-        => topic='change' | ids=[]
-        => topic='delete' | ids=[]
+        => topic='created' | ids=[]
+        => topic='changed' | ids=[]
+        => topic='deleted' | ids=[]
         """
         self._listeners.add(fn_callback)
 
@@ -707,7 +759,6 @@ class ProxyManager:
             proxy=proxy,
         )
 
-        self._emit("create", ids=[proxy.id])
         proxy.commit()
         self._life_cycle(
             "proxy_create_after_commit",
@@ -715,6 +766,8 @@ class ProxyManager:
             initial_values=initial_values,
             proxy=proxy,
         )
+
+        self._emit("created", ids=[proxy.id])
 
         return proxy
 
@@ -753,7 +806,7 @@ class ProxyManager:
         if trigger_modified:
             after_delete = set(self._id_map.keys())
             self.modified()
-            self._emit("delete", ids=list(before_delete.difference(after_delete)))
+            self._emit("deleted", ids=list(before_delete.difference(after_delete)))
 
     def get(self, proxy_id: str) -> Proxy:
         """
@@ -781,7 +834,7 @@ class ProxyManager:
         self._life_cycle(
             "proxy_update_after", change_set=change_set, dirty_ids=dirty_ids
         )
-        self._emit("change", ids=list(dirty_ids))
+        self._emit("changed", ids=list(dirty_ids))
 
     def get_instances_of_type(self, proxy_type):
         """
@@ -1085,72 +1138,50 @@ class ObjectFactory:
 # additional informations to the client for error checking and listing
 # available values for drop down and else.
 # -----------------------------------------------------------------------------
-class DomainManager(ProxyManagerLifeCycleListener):
+class ProxyDomainManager(ProxyManagerLifeCycleListener):
     def __init__(self):
         self._id_map = {}
         self._dirty_ids = set()
 
-    def has_dirty(self):
-        return len(self._dirty_ids) > 0
+    def is_dirty(self, _id):
+        return _id in self._dirty_ids
 
-    def clear_dirty(self):
-        self._dirty_ids.clear()
+    def clean(self, *_ids):
+        for _id in _ids:
+            self._dirty_ids.discard(_id)
 
     def dirty(self, *_ids):
         for _id in _ids:
             self._dirty_ids.add(_id)
 
-    def get_dirty_domains(self):
-        messages = []
-        for _id in self._dirty_ids:
-            msg = {"id": _id, "domains": self.domains(_id)}
-            messages.append(msg)
-        return messages
-
-    def available(self, _id, _prop_name, _domain_name):
-        domains = self._id_map.get(_id, {})
-        prop_domains = domains.get(_prop_name, {})
-        domain = prop_domains.get(_domain_name, None)
-        if domain:
-            return domain.available()
-        return []
-
-    def valid(self, _id, _prop_name, _domain_name):
-        domains = self._id_map.get(_id, {})
-        prop_domains = domains.get(_prop_name, {})
-        domain = prop_domains.get(_domain_name, None)
-        if domain:
-            return domain.valid()
-        return True  # no domain == valid
-
-    def domains(self, _id):
-        output = {}
-        domains = self._id_map.get(_id, {})
-        for prop_name, prop_domains in domains.items():
-            prop_info = {}
-            hints = []
-
-            for domain_name, domain_inst in prop_domains.items():
-                available = domain_inst.available()
-                valid = domain_inst.valid()
-                if available or not valid:
-                    prop_info[domain_name] = {"available": available, "valid": valid}
-
-            if prop_info or hints:
-                prop_info["hints"] = hints
-                output[prop_name] = prop_info
-
-        return output
+    def dirty_ids(self):
+        return _DirtyDomainsResources(self, self._dirty_ids)
 
     def get(self, _id):
-        return self._id_map.get(_id, {})
+        return self._id_map.get(_id)
 
     def proxy_create_before_commit(self, proxy_type, initial_values, proxy, **kwargs):
-        domains = Domain.create(proxy, self)
-        self._id_map[proxy.id] = domains
+        pd = ProxyDomain(proxy, self)
+        self._id_map[proxy.id] = pd
+        while pd.apply():
+            pass
+            # print("domain::apply(create)", proxy.id)
 
     def proxy_delete_before(self, proxy_id, trigger_modified, **kwargs):
         del self._id_map[proxy_id]
+
+
+class _DirtyDomainsResources(set):
+    def __init__(self, pdm, dirty_set):
+        super().__init__(dirty_set)
+        self._pdm = pdm
+
+    def __enter__(self):
+        self._pdm._dirty_ids.clear()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        pass
 
 
 ###############################################################################
@@ -1180,16 +1211,17 @@ def is_valid_value(v):
 # Move proxy property onto the object the proxy is controlling
 # -----------------------------------------------------------------------------
 def push(proxy: Proxy):
+    # print("~" * 30, f"> Push to VTK for {proxy.id}")
     obj_id = proxy.id
     obj = proxy.object
-    obj_manager = proxy.manager
+    pxm = proxy.manager
     obj_def = proxy.definition
     change_count = 0
 
     if hasattr(obj, "GetMTime"):
         change_count = obj.GetMTime()
 
-    ic("Push", proxy.edited_property_names)
+    # ic("Push", proxy.edited_property_names)
 
     for name in proxy.edited_property_names:
         value = proxy[name]
@@ -1206,9 +1238,7 @@ def push(proxy: Proxy):
                 filter = action.get("filter", None)
                 kwargs = action.get("kwargs", {})
                 if filter:
-                    filters.__dict__[filter](
-                        obj_manager, obj_id, name, method_name, **kwargs
-                    )
+                    filters.__dict__[filter](pxm, obj_id, name, method_name, **kwargs)
                 else:
                     getattr(obj, method_name)(**kwargs)
         elif hasattr(obj, f"set{name}"):
@@ -1217,7 +1247,7 @@ def push(proxy: Proxy):
                 change_count += 1
         elif hasattr(obj, f"Set{name}"):
             fn = getattr(obj, f"Set{name}")
-            ic(f"Set{name}", value)
+            # ic(f"Set{name}", value)
             if fn(value):
                 change_count += 1
 
@@ -1231,13 +1261,17 @@ def push(proxy: Proxy):
 # -----------------------------------------------------------------------------
 # Update properties by reading values from the object the proxy is controlling
 # -----------------------------------------------------------------------------
-def fetch(proxy: Proxy, names=[]):
-    ic("fetch", proxy.id, names)
+def fetch(proxy: Proxy, names=[], fetch_all=False):
+    # ic("fetch", proxy.id, names)
     if proxy:
         obj = proxy.object
         obj_def = proxy.definition
         props_updated = []
+        if len(names) == 0:
+            names = obj_def.keys()
         for name in names:
+            if name.startswith("_"):
+                continue
             prop_def = obj_def.get(name, {})
             if "_get" in prop_def:
                 if prop_def.get("_get") == "skip":
@@ -1263,6 +1297,11 @@ def fetch(proxy: Proxy, names=[]):
                 if known_value != read_value and is_valid_value(read_value):
                     props_updated.append(name)
                     proxy.set_property(name, read_value)
+
+        # Fetch sub-proxy
+        if fetch_all:
+            for _id in proxy.own:
+                fetch(proxy.manager.get(_id))
 
         change_detected = len(props_updated) > 0
         return change_detected, props_updated

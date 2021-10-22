@@ -1,6 +1,7 @@
 # Filters are like SIProperty
 # from icecream import ic
 
+
 def location_to_field_association(loc):
     if loc == "Point":
         return 0

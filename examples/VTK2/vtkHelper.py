@@ -10,8 +10,6 @@ from vtkmodules.vtkRenderingCore import (
 from vtkmodules.vtkInteractionStyle import vtkInteractorStyleSwitch
 from vtkmodules.vtkIOExodus import vtkExodusIIReader
 
-from icecream import ic
-
 
 class Diskout(vtkExodusIIReader):
     def __init__(self):
@@ -71,11 +69,9 @@ class Representation:
 
     @staticmethod
     def setView(view):
-        ic("set View", view)
         Representation._active_view = view
 
     def __init__(self):
-        ic("New Representation")
         self.mapper = vtkPolyDataMapper()
         self.actor = vtkActor()
         self.actor.SetMapper(self.mapper)
@@ -111,7 +107,6 @@ class Representation:
         return self.actor.GetProperty().GetOpacity()
 
     def SetOpacity(self, v):
-        print("SetOpacity", v)
         self.actor.GetProperty().SetOpacity(v)
 
     def GetVisibility(self):
@@ -120,7 +115,6 @@ class Representation:
         return 1
 
     def SetVisibility(self, v):
-        print("SetVisibility", v)
         self.actor.SetVisibility(v)
 
     def GetMTime(self):

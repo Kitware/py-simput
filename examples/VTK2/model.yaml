@@ -122,6 +122,9 @@ vtkContourFilter:
         initial: first
         isA:
           - vtkDataArray
+      - type: ResetOnChange
+        property: Contours
+        domain: Range
   Contours:
     type: float64
     size: 1
@@ -270,9 +273,9 @@ Representation:
   Opacity:
     size: 1
     type: float32
-    # domains:
-    #   - type: Range
-    #     value_range: [0, 1]
+    domains:
+      - type: Range
+        value_range: [0, 1]
   Visibility:
     size: 1
     type: uint8
