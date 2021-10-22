@@ -1,7 +1,7 @@
 <layouts>
     <ui id="vtkClipDataSet">
         <input name="ClipFunction" />
-        <object name="ClipFunction" />
+        <proxy name="ClipFunction" />
         <input name="Scalars" useRangeHelp="" />
         <input name="Value" />
         <row>

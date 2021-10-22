@@ -345,6 +345,51 @@ class ResetOnChange(PropertyDomain):
 
 
 # -----------------------------------------------------------------------------
+# BoundsCenter
+# -----------------------------------------------------------------------------
+#  name: xxxx                | (optional) provide another name than its type
+#  type: BoundsCenter        | select this domain
+# -----------------------------------------------------------------------------
+#  proxy: Property name containing data object proxy
+#  property: Property on Proxy that is the data object
+# -----------------------------------------------------------------------------
+class BoundsCenter(PropertyDomain):
+    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
+        super().__init__(_proxy, _property, _domain_manager, **kwargs)
+        self._dataset_path = kwargs.get("dataset", [])
+        # Always use to set initial value
+        self._need_set = True
+        self._should_compute_value = True
+
+    def set_value(self):
+        if self._should_compute_value:
+            # Get bounds
+            _ds = self._proxy
+            for next in self._dataset_path:
+                if _ds is None:
+                    print("Skip bounds no", )
+                    return False
+                print(next)
+                _ds = _ds[next]
+
+            _bounds = None
+            if _ds and _ds.object:
+                _bounds = handlers.BoundsExtractor.evaluate(_ds.object)
+
+            _center = None
+            if _bounds:
+                _center = handlers.BoundsCenter.evaluate(_bounds)
+
+            if _center:
+                self._should_compute_value = False
+                print("Set Center", _center)
+                self.value = _center
+                return True
+
+        return False
+
+
+# -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
 
@@ -355,3 +400,4 @@ def register_domains():
     ProxyDomain.register_property_domain("FieldSelector", FieldSelector)
     ProxyDomain.register_property_domain("Range", Range)
     ProxyDomain.register_property_domain("ResetOnChange", ResetOnChange)
+    ProxyDomain.register_property_domain("BoundsCenter", BoundsCenter)

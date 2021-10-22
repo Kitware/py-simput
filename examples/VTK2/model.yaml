@@ -41,10 +41,11 @@ vtkPlane:
   Origin:
     type: float32
     size: 3
-    # initial:
-    #   type: BoundsCenter
-    #   object: Filter
-    #   property: Input
+    domains:
+      - type: BoundsCenter
+        dataset:
+          - Filter
+          - Input
 
 
 # -----------------------------------------------------------------------------
@@ -178,18 +179,15 @@ vtkClipDataSet:
   ClipFunction:
     type: proxy
     size: 1
-    # initial:
-    #   type: ObjectBuilder
-    #   initial: Default
-    #   bind: Filter
-    #   values:
-    #     - name: Default
-    #       type: vtkPlane
-    #     - name: Scalars
-    #       type: vtkNoneImplicit
-    # domains:
-    #   - type: ObjectBuilder
-    #     anchor: ClipFunction
+    domains:
+      - type: ProxyBuilder
+        initial: Plane
+        values:
+          - name: Plane
+            type: vtkPlane
+          - name: Scalars
+            type: vtkNoneImplicit
+        bind: Filter
   Scalars:
     _set:
       - method: SetInputArrayToProcess
