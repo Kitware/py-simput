@@ -6609,21 +6609,26 @@ function addLabels(values, allTextValues) {
       });
     },
     computedHelp: function computedHelp() {
-      var _this3 = this;
+      var _this$selectedItem,
+          _this3 = this;
 
       if (!this.useRangeHelp) {
         return this.help;
       }
 
-      var rangeStr = this.selectedItem.range.map(function (v) {
-        return v.toFixed(_this3.rangePrecision);
-      }).join(', ');
+      if (this.selectedItem && (_this$selectedItem = this.selectedItem) !== null && _this$selectedItem !== void 0 && _this$selectedItem.range) {
+        var rangeStr = this.selectedItem.range.map(function (v) {
+          return v.toFixed(_this3.rangePrecision);
+        }).join(', ');
 
-      if (this.help) {
-        return "".concat(this.help, " - [").concat(rangeStr, "]");
+        if (this.help) {
+          return "".concat(this.help, " - [").concat(rangeStr, "]");
+        }
+
+        return "[".concat(rangeStr, "]");
       }
 
-      return "[".concat(rangeStr, "]");
+      return this.help;
     }
   },
   methods: {
