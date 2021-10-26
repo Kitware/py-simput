@@ -118,11 +118,14 @@ export default {
       if (!this.useRangeHelp) {
         return this.help;
       }
-      const rangeStr = this.selectedItem.range.map((v) => v.toFixed(this.rangePrecision)).join(', ');
-      if (this.help) {
-        return `${this.help} - [${rangeStr}]`;
+      if (this.selectedItem && this.selectedItem?.range) {
+        const rangeStr = this.selectedItem.range.map((v) => v.toFixed(this.rangePrecision)).join(', ');
+        if (this.help) {
+          return `${this.help} - [${rangeStr}]`;
+        }
+        return `[${rangeStr}]`;
       }
-      return `[${rangeStr}]`;
+      return this.help;
     },
   },
   methods: {

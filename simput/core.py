@@ -330,6 +330,8 @@ class Proxy:
                 _obj = self._properties.get(prop_name, None)
                 if _obj:
                     _properties[prop_name] = _obj.state
+                else:
+                    _properties[prop_name] = ''
             else:
                 _properties[prop_name] = self._properties.get(prop_name, None)
 
@@ -1170,6 +1172,13 @@ class ProxyDomainManager(ProxyManagerLifeCycleListener):
     def proxy_delete_before(self, proxy_id, trigger_modified, **kwargs):
         del self._id_map[proxy_id]
 
+
+    def apply_all(self):
+        results = {}
+        with self.dirty_ids() as ids:
+            for id in ids:
+                results[id] = self.get(id).apply()
+        return results
 
 class _DirtyDomainsResources(set):
     def __init__(self, pdm, dirty_set):

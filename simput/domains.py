@@ -38,11 +38,13 @@ class ProxyBuilder(PropertyDomain):
         for item in self._items:
             _name = item.get("name")
             _type = item.get("type")
-            sub_proxy = pxm.create(_type, _name=_name, _tags=_tags)
+            _init = {}
+            if _bind:
+                _init[_bind] = _proxy
+            sub_proxy = pxm.create(_type, _name=_name, _tags=_tags, **_init)
             _ids.append(sub_proxy.id)
             self._proxy_map[_name] = sub_proxy
-            if _bind:
-                sub_proxy.set_property(_bind, _proxy)
+
         _proxy.own = _ids
 
     def set_value(self):
@@ -213,10 +215,11 @@ class FieldSelector(PropertyDomain):
         return []
 
     def get_field(self):
-        array_name = self.value.name
-        for array in self.get_fields():
-            if array.GetName() == array_name:
-                return array
+        if self.value:
+            array_name = self.value.name
+            for array in self.get_fields():
+                if array.GetName() == array_name:
+                    return array
 
         return None
 
@@ -367,9 +370,7 @@ class BoundsCenter(PropertyDomain):
             _ds = self._proxy
             for next in self._dataset_path:
                 if _ds is None:
-                    print("Skip bounds no", )
                     return False
-                print(next)
                 _ds = _ds[next]
 
             _bounds = None
@@ -382,7 +383,6 @@ class BoundsCenter(PropertyDomain):
 
             if _center:
                 self._should_compute_value = False
-                print("Set Center", _center)
                 self.value = _center
                 return True
 

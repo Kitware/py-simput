@@ -177,6 +177,11 @@ vtkClipDataSet:
     type: proxy
     size: 1
   ClipFunction:
+    # _set:
+    #   - method: SetClipFunction
+    #     filter: to_self
+    #   - method: SetGenerateClipScalars
+    #     filter: to_bool
     type: proxy
     size: 1
     domains:
@@ -188,6 +193,9 @@ vtkClipDataSet:
           - name: Scalars
             type: vtkNoneImplicit
         bind: Filter
+      # - type: ResetOnChange
+      #   property: Scalars
+      #   domain: List
   Scalars:
     _set:
       - method: SetInputArrayToProcess
@@ -195,22 +203,27 @@ vtkClipDataSet:
         kwargs:
           idx: 0
           connection: 0
-          port: 0
-    type: string
+    type: value::Array
     size: 1
-    # initial:
-    #   type: FieldSelector
-    # domains:
-    #   - name: List
-    #     type: FieldSelector
-    #     property: Input
-    #     location: Point
-    #     size: 1
-    #     isA:
-    #       - vtkDataArray
+    domains:
+      - name: List
+        type: FieldSelector
+        input: Input
+        location: Point
+        size: 1
+        initial: first # not rendering initially if set
+        isA:
+          - vtkDataArray
+      - type: ResetOnChange
+        property: Value
+        domain: Range
   Value:
     type: float64
     size: 1
+    domains:
+      - type: Range
+        property: Scalars
+        initial: mean
   InsideOut:
     type: bool
     size: 1

@@ -123,10 +123,10 @@ def on_ready():
 
 
 def on_change(topic, ids=None, **kwargs):
-    if topic == "delete":
+    if topic == "deleted":
         update_sources()
 
-    if topic == "create":
+    if topic == "created":
         for obj_id in ids:
             obj_vtk = pxm.get(obj_id).object
             rep = Representation()
@@ -134,10 +134,7 @@ def on_change(topic, ids=None, **kwargs):
             rep.SetInput(obj_vtk)
         update_sources()
 
-    print("topic", topic)
-
     update_view()
-
 
 pxm.on(on_change)
 

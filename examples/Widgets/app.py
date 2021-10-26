@@ -1,5 +1,5 @@
 from pywebvue import App
-from simput.core import ObjectManager, UIManager
+from simput.core import ProxyManager, UIManager
 from simput.ui.web import VuetifyResolver
 from simput.pywebvue.modules import SimPut
 
@@ -18,11 +18,11 @@ app.enableModule(SimPut)
 # SimPut initialization
 # -----------------------------------------------------------------------------
 
-obj_manager = ObjectManager()
+pxm = ProxyManager()
 ui_resolver = VuetifyResolver()
-ui_manager = UIManager(obj_manager, ui_resolver)
+ui_manager = UIManager(pxm, ui_resolver)
 
-obj_manager.load_model(yaml_content=app.txt("./model.yaml"))
+pxm.load_model(yaml_content=app.txt("./model.yaml"))
 
 # Setup network handlers + state properties
 simput = SimPut.create_helper(ui_manager)
@@ -32,9 +32,9 @@ simput = SimPut.create_helper(ui_manager)
 # -----------------------------------------------------------------------------
 
 choices = []
-for obj_type in obj_manager.available_types:
-    item = obj_manager.create(obj_type)
-    choices.append({"text": obj_type, "value": item.get("id")})
+for obj_type in pxm.available_types:
+    item = pxm.create(obj_type)
+    choices.append({"text": obj_type, "value": item.id})
 
 app.set("choices", choices)
 app.set("active", choices[0].get("value"))

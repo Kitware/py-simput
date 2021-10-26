@@ -30,9 +30,15 @@ def to_input_array_to_process(
         return
 
     if isinstance(prop_value, str):
-        _location, _name = prop_value.split("::")
+        tokens = prop_value.split("::")
+        if len(tokens) != 2:
+            return
+        _location, _name = tokens
     else:
-        _location, _name = prop_value.state.split("::")
+        tokens = prop_value.state.split("::")
+        if len(tokens) != 2:
+            return
+        _location, _name = tokens
 
     method_params = [
         idx,
@@ -75,3 +81,29 @@ def map_index_value(pxm, obj_id, prop_name, method_name, start_index=0, **kwargs
         print(f"{method_name}({index}, {value})")
         fn(index, value)
         index += 1
+
+def to_bool(pxm, obj_id, prop_name, method_name, **kwargs):
+    _proxy = pxm.get(obj_id)
+    fn = getattr(_proxy.object, method_name)
+    value = _proxy[prop_name]
+    from simput.core import Proxy
+    if isinstance(value, Proxy):
+        value = value.object if value else None
+    print(method_name, value)
+    if value:
+        fn(True)
+    else:
+        fn(False)
+
+def to_self(pxm, obj_id, prop_name, method_name, modified=False, **kwargs):
+    _proxy = pxm.get(obj_id)
+    fn = getattr(_proxy.object, method_name)
+    value = _proxy[prop_name]
+    from simput.core import Proxy
+    if isinstance(value, Proxy):
+        value = value.object if value else None
+
+    if modified and value:
+        value.Modified()
+
+    fn(value)

@@ -123,6 +123,7 @@ def update_view(*args, **kwargs):
 def create_object(name, type):
     obj = pxm.create(type, _name=name)
     fetch(obj, fetch_all=True)
+    pdm.apply_all()
     app.set("activeSourceId", obj.id)
 
 
@@ -135,6 +136,7 @@ def create_filter(name, type):
     if input:
         filter = pxm.create(type, _name=name, Input=input)
         fetch(filter, fetch_all=True)
+        pdm.apply_all()
         app.set("activeSourceId", filter.id)
 
 

@@ -15,7 +15,11 @@ class Array(ObjectValue):
 
     @state.setter
     def state(self, value):
-        self._array_location, self._array_name = value.split("::")
+        if value:
+            self._array_location, self._array_name = value.split("::")
+        else:
+            self._array_location = 'Point'
+            self._array_name = ''
 
     @property
     def location(self):
