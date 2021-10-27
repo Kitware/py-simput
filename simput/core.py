@@ -947,13 +947,17 @@ class ProxyManager:
     def commit_all(self):
         dirty_ids = list(self.dirty_ids)
         for _id in dirty_ids:
-            self.get(_id).commit()
+            proxy = self.get(_id)
+            if proxy:
+                proxy.commit()
         self._emit("commit", ids=dirty_ids)
 
     def reset_all(self):
         dirty_ids = list(self.dirty_ids)
         for _id in dirty_ids:
-            self.get(_id).reset()
+            proxy = self.get(_id)
+            if proxy:
+                proxy.reset()
         self._emit("reset", ids=dirty_ids)
 
 

@@ -5565,6 +5565,7 @@ var utils_DataManager = /*#__PURE__*/function () {
 
       if (domains) {
         console.log("domains(".concat(id, ")"));
+        delete _this.pending["d-".concat(id)];
 
         var _before = JSON.stringify(_this.cache.domains[id]);
 
@@ -5612,7 +5613,7 @@ var utils_DataManager = /*#__PURE__*/function () {
 
         for (var _i = 0; _i < ids.length; _i++) {
           if (_this.cache.data[ids[_i]]) {
-            if (action === 'change') {
+            if (action === 'changed') {
               console.log('getData from data-change', ids[_i]);
 
               _this.getData(ids[_i], true);
@@ -5696,7 +5697,7 @@ var utils_DataManager = /*#__PURE__*/function () {
 
       if ((!domains || forceFetch) && !this.pending[id]) {
         console.log(' > fetch domain', id, forceFetch);
-        this.pending[id] = true;
+        this.pending["d-".concat(id)] = true;
         this.wsClient.getRemote().PyWebVue.trigger("".concat(this.namespace, "Fetch"), [], {
           domains: id
         });

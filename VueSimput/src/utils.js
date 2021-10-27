@@ -29,6 +29,7 @@ export class DataManager {
         }
         if (domains) {
           console.log(`domains(${id})`);
+          delete this.pending[`d-${id}`];
           const before = JSON.stringify(this.cache.domains[id]);
           const after = JSON.stringify(domains);
           // console.log(JSON.stringify(domains, null, 2));
@@ -63,7 +64,7 @@ export class DataManager {
           const { ids, action } = event;
           for (let i = 0; i < ids.length; i++) {
             if (this.cache.data[ids[i]]) {
-              if (action === 'change') {
+              if (action === 'changed') {
                 console.log('getData from data-change', ids[i]);
                 this.getData(ids[i], true);
               }
@@ -114,7 +115,6 @@ export class DataManager {
 
   getData(id, forceFetch = false) {
     const data = this.cache.data[id];
-
     if ((!data || forceFetch) && !this.pending[id]) {
       console.log(' > fetch data', id, forceFetch);
       this.pending[id] = true;
@@ -129,7 +129,7 @@ export class DataManager {
 
     if ((!domains || forceFetch) && !this.pending[id]) {
       console.log(' > fetch domain', id, forceFetch);
-      this.pending[id] = true;
+      this.pending[`d-${id}`] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { domains: id });
     }
 
