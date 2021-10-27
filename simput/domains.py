@@ -268,7 +268,19 @@ class Range(PropertyDomain):
                     f"Range domain can't compute {self.__compute}. Expect 'mean', 'min' or 'max' instead."
                 )
 
-            self.value = _v
+            prop_size = self._proxy.definition.get(self._property_name).get("size", 1)
+            if prop_size == -1:
+                self.value = [_v]
+            elif prop_size > 1:
+                if self.value and isinstance(self.value, list):
+                    if len(self.value):
+                        self.value[0] = _v
+                    else:
+                        self.value.append(_v)
+                else:
+                    self.value = [_v]
+            else:
+                self.value = _v
             # ic("Set Range value", data_range, _v)
             self._should_compute_value = False
             return True

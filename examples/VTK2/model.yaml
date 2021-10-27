@@ -128,7 +128,7 @@ vtkContourFilter:
         domain: Range
   Contours:
     type: float64
-    size: 1
+    size: -1
     _set:
       - method: SetNumberOfContours
         filter: to_size
@@ -143,6 +143,7 @@ vtkContourFilter:
       - type: UI
         properties:
           layout: vertical
+          sizeControl: 1
   ComputeScalars:
     type: bool
     size: 1
