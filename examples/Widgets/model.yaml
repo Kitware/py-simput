@@ -211,7 +211,7 @@ Select:
     type: string
     initial: use-case-1
     domains:
-      - type: PropertyList
+      - type: PropertyList # Client handling pointing to existing domain
         property: MultiString
 
 Switch:

@@ -389,6 +389,39 @@ class BoundsCenter(PropertyDomain):
 
         return False
 
+# -----------------------------------------------------------------------------
+# LabelList
+# -----------------------------------------------------------------------------
+#  name: xxxx                | (optional) provide another name than its type
+#  type: LabelList           | select this domain
+# -----------------------------------------------------------------------------
+#  values: [{ text, value}, ...]
+# -----------------------------------------------------------------------------
+class LabelList(PropertyDomain):
+    def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
+        super().__init__(_proxy, _property, _domain_manager, **kwargs)
+        self._values = kwargs.get("values", [])
+
+    def set_value(self):
+        if self._should_compute_value and self._values:
+            self._should_compute_value = False
+            # first
+            self.value = self._values[0].get("value")
+            return True
+        return False
+
+    def available(self):
+        return self._values
+
+    def valid(self, required_level=2):
+        if self._level < required_level:
+            return True
+
+        v = self.value
+        for item in self._values:
+            if item.get("value", None) == v:
+                return True
+        return False
 
 # -----------------------------------------------------------------------------
 # Registration
@@ -402,3 +435,4 @@ def register_domains():
     ProxyDomain.register_property_domain("Range", Range)
     ProxyDomain.register_property_domain("ResetOnChange", ResetOnChange)
     ProxyDomain.register_property_domain("BoundsCenter", BoundsCenter)
+    ProxyDomain.register_property_domain("LabelList", LabelList)
