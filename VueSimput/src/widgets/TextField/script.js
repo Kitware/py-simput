@@ -87,8 +87,37 @@ export default {
     convert() {
       return TYPES[this.type]?.convert || FALLBACK_CONVERT;
     },
+    hints() {
+      /* eslint-disable no-unused-expressions */
+      this.mtime; // force refresh
+      return this.domains()[this.name].hints || [];
+    },
   },
   methods: {
+    levelToType(level) {
+      switch (level) {
+        case 0:
+          return 'info';
+        case 1:
+          return 'warning';
+        case 2:
+          return 'error';
+        default:
+          return 'success';
+      }
+    },
+    levelToIcon(level) {
+      switch (level) {
+        case 0:
+          return 'mdi-information-outline';
+        case 1:
+          return 'mdi-alert-octagon-outline';
+        case 2:
+          return 'mdi-alert-outline';
+        default:
+          return 'mdi-brain';
+      }
+    },
     refresh() {
       this.getSimput().refresh(this.data().id, this.name);
     },

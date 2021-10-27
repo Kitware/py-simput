@@ -32,6 +32,7 @@ class VuetifyResolver:
             widget = "sw-text-field"
             for domain in domains:
                 ctype = domain.get("type")
+                level = domain.get("level", 0)
                 if (
                     ctype == "LabelList"
                     or ctype == "PropertyList"
@@ -49,7 +50,7 @@ class VuetifyResolver:
                     widget = "sw-select"
                 if ctype == "Boolean":
                     widget = "sw-switch"
-                if ctype == "Range":
+                if ctype == "Range" and level == 2:
                     value_range = domain.get("value_range", None)
                     if value_range:
                         attributes[":min"] = value_range[0]

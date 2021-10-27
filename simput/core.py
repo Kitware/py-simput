@@ -437,7 +437,12 @@ class PropertyDomain:
         self._message = value
 
     def hints(self):
-        return []
+        if self.valid(-1):
+            return []
+        return [{
+            "level": self._level,
+            "message": self._message,
+        }]
 
 
 # -----------------------------------------------------------------------------
@@ -533,6 +538,7 @@ class ProxyDomain:
             for domain_name, domain_inst in prop_domains.items():
                 available = domain_inst.available()
                 valid = domain_inst.valid()
+                hints += domain_inst.hints()
                 if available or not valid:
                     prop_info[domain_name] = {"available": available, "valid": valid}
 
