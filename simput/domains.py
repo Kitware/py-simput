@@ -99,9 +99,10 @@ class IsEqual(PropertyDomain):
 
     def valid(self, required_level=2):
         _v = self.value.id if isinstance(self.value, Proxy) else self.value
-        _available = self._proxy_domain_manager.available(
-            self._proxy.id, self._property_name, self._available
-        )
+        pxd = self._proxy_domain_manager.get(self._proxy.id)
+        domain = pxd.get_property_domains(self._property_name).get(self._available)
+        _available = domain.available()
+
         # ic("IsEqual:valid", _v, _available, self._value)
 
         if _v == self._value:

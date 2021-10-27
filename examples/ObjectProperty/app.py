@@ -1,5 +1,5 @@
 from pywebvue import App
-from simput.core import ProxyManager, UIManager, DomainManager
+from simput.core import ProxyManager, UIManager, ProxyDomainManager
 from simput.domains import register_domains
 from simput.ui.web import VuetifyResolver
 from simput.pywebvue.modules import SimPut
@@ -21,7 +21,7 @@ app.enableModule(SimPut)
 
 pxm = ProxyManager()
 ui_manager = UIManager(pxm, VuetifyResolver())
-domains_manager = DomainManager()
+domains_manager = ProxyDomainManager()
 
 pxm.add_life_cycle_listener(domains_manager)
 pxm.load_model(yaml_content=app.txt("./model.yaml"))
