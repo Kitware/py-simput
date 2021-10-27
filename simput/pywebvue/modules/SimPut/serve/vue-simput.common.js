@@ -7257,6 +7257,10 @@ var templatevue_type_template_id_468c6120_staticRenderFns = []
       this.getSimput().refresh(this.data().id, this.name);
     },
     addEntry: function addEntry() {
+      if (!this.model) {
+        this.model = [];
+      }
+
       this.dynamicSize = this.model.length + 1;
       this.model.length = this.dynamicSize;
       this.validate(this.dynamicSize);
