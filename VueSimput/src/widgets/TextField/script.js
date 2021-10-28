@@ -40,6 +40,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    newValue: {
+      type: String,
+      default: 'same',
+    },
   },
   data() {
     return {
@@ -68,7 +72,7 @@ export default {
     computedLayout() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.layout || this.constraints()[this.name]?.UI?.layout || 'horizontal';
+      return this.layout || this.domains()[this.name]?.UI?.layout || 'horizontal';
     },
     computedSize() {
       if (Number(this.size) !== 1) {
@@ -79,7 +83,7 @@ export default {
     computedSizeControl() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.sizeControl || this.constraints()[this.name]?.UI?.sizeControl;
+      return this.sizeControl || this.domains()[this.name]?.UI?.sizeControl;
     },
     rule() {
       return TYPES[this.type]?.rule || (() => true);
@@ -87,14 +91,53 @@ export default {
     convert() {
       return TYPES[this.type]?.convert || FALLBACK_CONVERT;
     },
+    hints() {
+      /* eslint-disable no-unused-expressions */
+      this.mtime; // force refresh
+      return this.domains()?.[this.name]?.hints || [];
+    },
   },
   methods: {
+    levelToType(level) {
+      switch (level) {
+        case 0:
+          return 'info';
+        case 1:
+          return 'warning';
+        case 2:
+          return 'error';
+        default:
+          return 'success';
+      }
+    },
+    levelToIcon(level) {
+      switch (level) {
+        case 0:
+          return 'mdi-information-outline';
+        case 1:
+          return 'mdi-alert-octagon-outline';
+        case 2:
+          return 'mdi-alert-outline';
+        default:
+          return 'mdi-brain';
+      }
+    },
     refresh() {
       this.getSimput().refresh(this.data().id, this.name);
     },
     addEntry() {
+      if (!this.model) {
+        this.model = [];
+      }
       this.dynamicSize = this.model.length + 1;
       this.model.length = this.dynamicSize;
+
+      if (this.newValue === 'null') {
+        this.model[this.model.length - 1] = null;
+      } else if (this.newValue === 'same') {
+        this.model[this.model.length - 1] = this.model[this.model.length - 2];
+      }
+
       this.validate(this.dynamicSize);
     },
     deleteEntry(index) {
@@ -175,5 +218,5 @@ export default {
       }
     },
   },
-  inject: ['data', 'properties', 'constraints', 'dirty', 'getSimput'],
+  inject: ['data', 'properties', 'domains', 'dirty', 'getSimput'],
 };

@@ -38,6 +38,17 @@
       <div v-if="help && showHelp" class="mt-0 mb-2 text-caption text--secondary">
         {{ help }}
       </div>
+      <v-alert
+        v-for="hint, idx in hints"
+        :key="idx"
+        class="mb-1"
+        :type="levelToType(hint.level)"
+        border="left"
+        dense
+        :icon="levelToIcon(hint.level)"
+      >
+        {{ hint.message }}
+      </v-alert>
     </v-col>
     <v-col
       class="py-1"
@@ -70,6 +81,17 @@
           <v-icon>mdi-minus-circle-outline</v-icon>
         </v-btn>
       </v-row>
+      <v-alert
+        v-for="hint, idx in hints"
+        :key="idx"
+        class="mb-1"
+        :type="levelToType(hint.level)"
+        border="left"
+        dense
+        :icon="levelToIcon(hint.level)"
+      >
+        {{ hint.message }}
+      </v-alert>
     </v-col>
   </v-row>
 </v-container>

@@ -17,23 +17,22 @@ Cone:
   Height:
     type: float64
     size: 1
-    constraints:
-      - type: Min
-        value: 0
-        exclude: true
+    domains:
+      - type: Range
+        value_range: [0.00001, 1000]
   Radius:
     type: float64
     size: 1
-    constraints:
-      - type: Min
-        value: 0
-        exclude: true
+    domains:
+      - type: Range
+        value_range: [0.00001, 10]
   Resolution:
     type: uint16
     size: 1
-    constraints:
-      - type: Min
-        value: 3
+    domains:
+      - type: Range
+        value_range: [3, 360]
+        level: 2
 
 # =========================================================
 # ImplicitFunctions
@@ -84,47 +83,40 @@ Clip:
   _tags:
     - Algorithm
   Input:
-    type: object
+    type: proxy
     size: 1
-    constraints:
-      - type: HasTags
-        values:
-          - Algorithm
   ClipFunction:
-    type: object
+    type: proxy
     size: 1
-    initial:
-      type: ObjectBuilder
-      initial: Plane
-      values:
-        - name: Plane
-          type: ImplicitPlane
-        - name: Box
-          type: ImplicitBox
-        - name: Sphere
-          type: ImplicitSphere
-        - name: Scalar
-          type: ImplicitPlaceHolder
-    constraints:
-      - type: ObjectBuilder
-        anchor: ClipFunction
-      - type: IsEqual
+    domains:
+      - type: ProxyBuilder
+        initial: Plane
+        validator:
+        values:
+          - name: Plane
+            type: ImplicitPlane
+          - name: Box
+            type: ImplicitBox
+          - name: Sphere
+            type: ImplicitSphere
+          - name: Scalar
+            type: ImplicitPlaceHolder
+      - name: Scalars
+        type: IsEqual
+        available: ProxyBuilder
         value: Scalar
-        available: ObjectBuilder
-        name: Scalars
   InsideOut:
     size: 1
     type: uint8
     initial: 0
-    constraints:
+    domains:
       - type: Boolean
   Scalars:
     size: 1
     type: string
-    initial:
-      type: FieldSelector
-    constraints:
+    domains:
       - type: FieldSelector
+        initial: first
         property: Input
         port: 0
         location: Points
@@ -138,7 +130,7 @@ Clip:
     initial: 0
     #   type: MeanRange
     #   property: Scalars
-    # constraints:
+    # domains:
     #   - type: Range
     #     property: Scalars
 

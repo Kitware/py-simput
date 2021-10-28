@@ -3,7 +3,7 @@ import SwSlider from './Slider';
 import SwSwitch from './Switch';
 import SwTextArea from './TextArea';
 import SwTextField from './TextField';
-import SwObject from './Object';
+import SwProxy from './Proxy';
 import SwShow from './Show';
 import SwHide from './Hide';
 import SwText from './Text';
@@ -14,7 +14,7 @@ export default {
   SwSwitch,
   SwTextArea,
   SwTextField,
-  SwObject,
+  SwProxy,
   SwShow,
   SwHide,
   SwText,

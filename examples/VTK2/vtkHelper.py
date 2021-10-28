@@ -107,7 +107,6 @@ class Representation:
         return self.actor.GetProperty().GetOpacity()
 
     def SetOpacity(self, v):
-        print("SetOpacity", v)
         self.actor.GetProperty().SetOpacity(v)
 
     def GetVisibility(self):
@@ -116,7 +115,6 @@ class Representation:
         return 1
 
     def SetVisibility(self, v):
-        print("SetVisibility", v)
         self.actor.SetVisibility(v)
 
     def GetMTime(self):

@@ -21,7 +21,7 @@ TextField:
     initial:
       - 8
       - 16
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: vertical
@@ -39,7 +39,7 @@ TextField:
       - 0
       - 0
       - 1
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: vertical
@@ -51,7 +51,7 @@ TextField:
       - b
       - c
       - d
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: l2
@@ -68,7 +68,7 @@ TextField:
       - g
       - h
       - i
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: l3
@@ -92,7 +92,7 @@ TextField:
       - n
       - o
       - p
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: l4
@@ -106,7 +106,7 @@ TextField:
       - e
       - f
     type: string
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: m3-half
@@ -114,7 +114,7 @@ TextField:
     size: -1
     initial: []
     type: uint32
-    constraints:
+    domains:
       - type: UI
         properties:
           layout: vertical
@@ -127,7 +127,7 @@ Select:
       Example of a String drop down
     type: string
     initial: use-case-2
-    constraints:
+    domains:
       - type: LabelList
         values:
           - text: Case 1
@@ -143,7 +143,7 @@ Select:
       Example of a uint8 drop down
     type: uint8
     initial: 2
-    constraints:
+    domains:
       - type: LabelList
         values:
           - text: Case 1
@@ -162,7 +162,7 @@ Select:
     initial:
       - use-case-1
       - use-case-3
-    constraints:
+    domains:
       - type: LabelList
         values:
           - text: Case 1
@@ -193,7 +193,7 @@ Select:
     initial:
       - 2
       - 4
-    constraints:
+    domains:
       - type: LabelList
         values:
           - text: Case 1
@@ -210,8 +210,8 @@ Select:
     _help: Just to try remote domain list
     type: string
     initial: use-case-1
-    constraints:
-      - type: PropertyList
+    domains:
+      - type: PropertyList # Client handling pointing to existing domain
         property: MultiString
 
 Switch:
@@ -221,7 +221,7 @@ Switch:
       Example of a switch
     type: uint8
     initial: 0
-    constraints:
+    domains:
       - type: Boolean
 
   BasicOn:
@@ -230,7 +230,7 @@ Switch:
       Example of a switch
     type: uint8
     initial: 1
-    constraints:
+    domains:
       - type: Boolean
 
   BasicOnBool:
@@ -246,7 +246,7 @@ Switch:
       deserunt mollit anim id est laborum.
     type: bool
     initial: true
-    constraints:
+    domains:
       - type: Boolean
 
   BasicOffBool:
@@ -255,7 +255,7 @@ Switch:
       Example of a switch
     type: bool
     initial: false
-    constraints:
+    domains:
       - type: Boolean
 
 TextArea:
@@ -274,7 +274,7 @@ TextArea:
       deserunt mollit anim id est laborum.
     type: string
     initial: Hello
-    constraints:
+    domains:
       - type: UI
         widget: textarea
         properties:
@@ -304,7 +304,7 @@ TextArea:
       occaecat cupidatat non proident, sunt in culpa qui officia
       deserunt mollit anim id est laborum.
     type: string
-    constraints:
+    domains:
       - type: UI
         widget: textarea
         properties:
@@ -318,10 +318,10 @@ Slider:
     type: uint8
     size: 1
     initial: 128
-    constraints:
+    domains:
       - type: Range
         value_range: [0, 255]
-        exclusive: false
+        level: 2
 
   DoubleInt:
     _label: Double integers
@@ -337,10 +337,10 @@ Slider:
     type: uint8
     size: 2
     initial: [5, 10]
-    constraints:
+    domains:
       - type: Range
         value_range: [0, 255]
-        exclusive: false
+        level: 2
 
   DoubleFloat:
     _label: Double floats
@@ -356,10 +356,10 @@ Slider:
     type: float64
     size: 1
     initial: 3.141592654
-    constraints:
+    domains:
       - type: Range
         value_range: [-10, 10]
-        exclusive: false
+        level: 2
 
 
   ManyDoubleFloat:
@@ -377,10 +377,10 @@ Slider:
     size: -1
     initial:
       - 3.141592654
-    constraints:
+    domains:
       - type: Range
         value_range: [-10, 10]
-        exclusive: false
+        level: 2
       - type: UI
         properties:
           sizeControl: true

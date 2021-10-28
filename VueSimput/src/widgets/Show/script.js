@@ -4,7 +4,7 @@ export default {
     property: {
       type: String,
     },
-    constrain: {
+    domain: {
       type: String,
     },
     mtime: {
@@ -14,12 +14,13 @@ export default {
   computed: {
     visible() {
       this.mtime; // eslint-disable-line
-      const { value, available } = this.constraints()?.[this.property]?.[this.constrain];
-      if (value === 'local-in') {
-        return available.indexOf(this.properties()?.[this.property]) !== -1;
+      const domain = this.domains()?.[this.property]?.[this.domain];
+      if (!domain) {
+        // no domain == valid
+        return true;
       }
-      return value;
+      return domain.value;
     },
   },
-  inject: ['properties', 'constraints'],
+  inject: ['properties', 'domains'],
 };

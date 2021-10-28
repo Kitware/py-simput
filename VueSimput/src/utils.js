@@ -14,9 +14,10 @@ export class DataManager {
       .getSession()
       .subscribe('simput.push', ([event]) => {
         const {
-          id, data, constraints, type, ui,
+          id, data, domains, type, ui,
         } = event;
         if (data) {
+          console.log(`data(${id})`);
           delete this.pending[id];
           const before = JSON.stringify(this.cache.data[id]?.properties);
           const after = JSON.stringify(data.properties);
@@ -26,14 +27,18 @@ export class DataManager {
           this.cache.data[id].mtime = data.mtime;
           this.cache.data[id].original = JSON.parse(after);
         }
-        if (constraints) {
-          const before = JSON.stringify(this.cache.constraints[id]);
-          const after = JSON.stringify(constraints);
+        if (domains) {
+          console.log(`domains(${id})`);
+          delete this.pending[`d-${id}`];
+          const before = JSON.stringify(this.cache.domains[id]);
+          const after = JSON.stringify(domains);
+          // console.log(JSON.stringify(domains, null, 2));
           if (before !== after) {
-            this.cache.constraints[id] = constraints;
+            this.cache.domains[id] = domains;
           }
         }
         if (ui) {
+          console.log(`ui(${type})`);
           delete this.pending[type];
           this.cache.ui[type] = ui;
         }
@@ -59,7 +64,8 @@ export class DataManager {
           const { ids, action } = event;
           for (let i = 0; i < ids.length; i++) {
             if (this.cache.data[ids[i]]) {
-              if (action === 'change') {
+              if (action === 'changed') {
+                console.log('getData from data-change', ids[i]);
                 this.getData(ids[i], true);
               }
             }
@@ -69,6 +75,7 @@ export class DataManager {
 
     this.onDirty = ({ id, name }) => {
       const value = this.cache.data[id].properties[name];
+      console.log(' > dirty', id, name);
       this.wsClient
         .getRemote()
         .PyWebVue.trigger(`${this.namespace}Update`, [[{ id, name, value }]]);
@@ -79,7 +86,7 @@ export class DataManager {
     this.cache = {
       data: {},
       ui: {},
-      constraints: {},
+      domains: {},
     };
   }
 
@@ -108,8 +115,8 @@ export class DataManager {
 
   getData(id, forceFetch = false) {
     const data = this.cache.data[id];
-
     if ((!data || forceFetch) && !this.pending[id]) {
+      console.log(' > fetch data', id, forceFetch);
       this.pending[id] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { id });
     }
@@ -117,21 +124,23 @@ export class DataManager {
     return data;
   }
 
-  getConstraints(id, forceFetch = false) {
-    const constraints = this.cache.constraints[id];
+  getDomains(id, forceFetch = false) {
+    const domains = this.cache.domains[id];
 
-    if ((!constraints || forceFetch) && !this.pending[id]) {
-      this.pending[id] = true;
-      this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { id });
+    if ((!domains || forceFetch) && !this.pending[`d-${id}`]) {
+      console.log(' > fetch domain', id, forceFetch);
+      this.pending[`d-${id}`] = true;
+      this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { domains: id });
     }
 
-    return constraints;
+    return domains;
   }
 
   getUI(type, forceFetch = false) {
     const ui = this.cache.ui[type];
 
     if ((!ui || forceFetch) && !this.pending[type]) {
+      console.log(' > fetch ui', type, forceFetch);
       this.pending[type] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { type });
     }
@@ -144,6 +153,7 @@ export class DataManager {
   }
 
   refresh(id, name) {
+    console.log(' > refresh', id, name);
     this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Refresh`, [id, name]);
   }
 }

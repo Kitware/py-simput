@@ -98,15 +98,15 @@ export default {
       }
       // Dynamic domain evaluation
       if (this.itemsProperty) {
-        const available = this.constraints()[this.itemsProperty]?.LabelList?.available || [];
+        const available = this.domains()[this.itemsProperty]?.LabelList?.available || [];
         const filteredValues = this.properties()[this.itemsProperty];
         return addLabels(filteredValues, available);
       }
-      const availableOptions = this.constraints()[this.name] || {};
+      const availableOptions = this.domains()[this.name] || {};
 
       return availableOptions?.List?.available
         || availableOptions?.HasTags?.available
-        || availableOptions?.ObjectBuilder?.available
+        || availableOptions?.ProxyBuilder?.available
         || availableOptions?.FieldSelector?.available;
     },
     selectedItem() {
@@ -118,11 +118,14 @@ export default {
       if (!this.useRangeHelp) {
         return this.help;
       }
-      const rangeStr = this.selectedItem.range.map((v) => v.toFixed(this.rangePrecision)).join(', ');
-      if (this.help) {
-        return `${this.help} - [${rangeStr}]`;
+      if (this.selectedItem && this.selectedItem?.range) {
+        const rangeStr = this.selectedItem.range.map((v) => v.toFixed(this.rangePrecision)).join(', ');
+        if (this.help) {
+          return `${this.help} - [${rangeStr}]`;
+        }
+        return `[${rangeStr}]`;
       }
-      return `[${rangeStr}]`;
+      return this.help;
     },
   },
   methods: {
@@ -135,5 +138,5 @@ export default {
       this.dirty(this.name);
     },
   },
-  inject: ['data', 'properties', 'constraints', 'dirty', 'uiTS', 'simputChannel'],
+  inject: ['data', 'properties', 'domains', 'dirty', 'uiTS', 'simputChannel'],
 };

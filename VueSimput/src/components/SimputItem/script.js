@@ -18,7 +18,7 @@ export default {
     return {
       data: null,
       ui: null,
-      constraints: null,
+      domains: null,
     };
   },
   created() {
@@ -29,7 +29,7 @@ export default {
       /* eslint-disable eqeqeq */
       if (id && this.itemId == id) {
         this.data = this.getSimput().getData(id);
-        this.constraints = this.getSimput().getConstraints(id);
+        this.domains = this.getSimput().getDomains(id);
       }
       if (type && this.type === type) {
         this.ui = this.getSimput().getUI(this.type);
@@ -56,15 +56,15 @@ export default {
       return this.data && this.data.type;
     },
     available() {
-      return !!(this.data && this.constraints && this.ui);
+      return !!(this.data && this.domains && this.ui);
     },
     properties() {
       return this.data?.properties;
     },
     all() {
-      const { data, constraints, properties } = this;
+      const { data, domains, properties } = this;
       return {
-        id: this.itemId, data, constraints, properties,
+        id: this.itemId, data, domains, properties,
       };
     },
   },
@@ -74,7 +74,7 @@ export default {
       this.ui = null;
       if (this.itemId) {
         this.data = this.getSimput().getData(this.itemId);
-        this.constraints = this.getSimput().getConstraints(this.itemId);
+        this.domains = this.getSimput().getDomains(this.itemId);
         if (this.type) {
           this.ui = this.getSimput().getUI(this.type);
         }
@@ -90,7 +90,7 @@ export default {
       simputChannel: this.simputChannel,
       dirty: (name) => this.dirty(name),
       data: () => this.data,
-      constraints: () => this.constraints,
+      domains: () => this.domains,
       properties: () => this.properties,
       uiTS: () => this.getSimput().getUITimeStamp(),
     };
