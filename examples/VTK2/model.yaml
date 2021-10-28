@@ -140,6 +140,7 @@ vtkContourFilter:
       - type: Range
         property: ContourBy
         initial: mean
+        level: 1 # 2=slider  1-0=text
       - type: UI
         properties:
           layout: vertical
