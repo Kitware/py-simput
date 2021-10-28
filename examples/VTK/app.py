@@ -136,6 +136,7 @@ def on_change(topic, ids=None, **kwargs):
 
     update_view()
 
+
 pxm.on(on_change)
 
 # -----------------------------------------------------------------------------

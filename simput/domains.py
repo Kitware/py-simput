@@ -416,6 +416,7 @@ class BoundsCenter(PropertyDomain):
 
         return False
 
+
 # -----------------------------------------------------------------------------
 # LabelList
 # -----------------------------------------------------------------------------
@@ -449,6 +450,7 @@ class LabelList(PropertyDomain):
             if item.get("value", None) == v:
                 return True
         return False
+
 
 # -----------------------------------------------------------------------------
 # Registration

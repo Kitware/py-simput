@@ -82,11 +82,13 @@ def map_index_value(pxm, obj_id, prop_name, method_name, start_index=0, **kwargs
         fn(index, value)
         index += 1
 
+
 def to_bool(pxm, obj_id, prop_name, method_name, **kwargs):
     _proxy = pxm.get(obj_id)
     fn = getattr(_proxy.object, method_name)
     value = _proxy[prop_name]
     from simput.core import Proxy
+
     if isinstance(value, Proxy):
         value = value.object if value else None
     print(method_name, value)
@@ -95,11 +97,13 @@ def to_bool(pxm, obj_id, prop_name, method_name, **kwargs):
     else:
         fn(False)
 
+
 def to_self(pxm, obj_id, prop_name, method_name, modified=False, **kwargs):
     _proxy = pxm.get(obj_id)
     fn = getattr(_proxy.object, method_name)
     value = _proxy[prop_name]
     from simput.core import Proxy
+
     if isinstance(value, Proxy):
         value = value.object if value else None
 

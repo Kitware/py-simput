@@ -18,8 +18,8 @@ class Array(ObjectValue):
         if value:
             self._array_location, self._array_name = value.split("::")
         else:
-            self._array_location = 'Point'
-            self._array_name = ''
+            self._array_location = "Point"
+            self._array_name = ""
 
     @property
     def location(self):
