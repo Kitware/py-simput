@@ -1,11 +1,8 @@
 import os
+import json
 
 from wslink import register as exportRpc
 from wslink.websocket import LinkProtocol
-
-# from icecream import ic
-
-import json
 
 serve_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "serve"))
 
@@ -132,12 +129,13 @@ class SimputHelper:
             domain.enable_set_value()
             change_count += domain.set_value()
 
-        print("reset", change_count)
         if change_count:
-            self.apply()
             with self._domains_manager.dirty_ids() as dirty_ids:
                 for _id in dirty_ids:
                     self.push(id=_id)
+
+            if self._auto_update:
+                self.apply()
 
     def push(self, id=None, type=None, domains=None):
         if id:
@@ -175,10 +173,8 @@ class SimputHelper:
             while change_detected:
                 change_detected = 0
                 with self._domains_manager.dirty_ids() as dirty_ids:
-                    # print("Dirty ids", dirty_ids)
                     all_ids.update(dirty_ids)
                     for _id in dirty_ids:
-                        # print("domain::apply", _id)
                         delta = self._domains_manager.get(_id).apply()
                         change_detected += delta
                         if delta:
@@ -186,8 +182,6 @@ class SimputHelper:
 
             # Push any changed state in domains
             for _id in all_ids:
-                # print("domain::push", _id)
-                # print("#" * 4, "update", _id)
                 self._domains_manager.clean(_id)
                 self._app.protocol_call(
                     "simput.message.push",
@@ -197,10 +191,7 @@ class SimputHelper:
                     },
                 )
 
-            # print(">"*30, "domain::apply > push::data")
             for _id in data_ids:
-                # print("domain >>> data::push", _id)
-                # print("#" * 4, "update", _id)
                 self._app.protocol_call(
                     "simput.message.push",
                     {
@@ -208,12 +199,9 @@ class SimputHelper:
                         "data": self._ui_manager.data(_id),
                     },
                 )
-            # print("<"*30, "domain::apply > push::data")
 
         if self._auto_update:
-            # print("-" * 30, "Before auto apply")
             self.apply()
-            # print("-" * 30, "After auto apply")
 
     @property
     def has_changes(self):
@@ -263,21 +251,15 @@ class SimputProtocol(LinkProtocol):
 
     @exportRpc("simput.data.get")
     def get_data(self, manager_id, id):
-        # ic("get_data", id)
         uim = get_ui_manager(manager_id)
         msg = {"id": id, "data": uim.data(id)}
-        # print("#" * 4, "get_data", id)
-        # print(json.dumps(msg, indent=2))
-        # print("~"*60)
         self.send_message(msg)
         return msg
 
     @exportRpc("simput.ui.get")
     def get_ui(self, manager_id, type):
-        # ic("get_ui", type)
         uim = get_ui_manager(manager_id)
         msg = {"type": type, "ui": uim.ui(type)}
-        # print("#" * 4, "get_ui", type)
         self.send_message(msg)
         return msg
 

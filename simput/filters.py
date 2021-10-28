@@ -1,8 +1,11 @@
 # Filters are like SIProperty
-# from icecream import ic
+# They are use properly call method to concrete object from property values
+# Filters will call a method while interpreting the prop value in a way
+# that it make it compatible with the method profile.
 
 
 def location_to_field_association(loc):
+    """Helper to map location to VTK/Enum value"""
     if loc == "Point":
         return 0
     if loc == "Cell":
@@ -14,6 +17,7 @@ def location_to_field_association(loc):
 
 
 def to_output_port(pxm, obj_id, prop_name, method_name, port=0, connection=0, **kwargs):
+    """Pipeline binding"""
     _proxy = pxm.get(obj_id)
     _input = _proxy[prop_name].object
     print(f"{method_name}({_input.GetClassName()}.GetOutputPort({port}))")
@@ -23,7 +27,7 @@ def to_output_port(pxm, obj_id, prop_name, method_name, port=0, connection=0, **
 def to_input_array_to_process(
     pxm, obj_id, prop_name, method_name, idx=0, connection=0, port=0, **kwargs
 ):
-    # ic("to_input_array_to_process", prop_name)
+    """vtkAlgorithm array processing"""
     _proxy = pxm.get(obj_id)
     prop_value = _proxy[prop_name]
     if not prop_value:
@@ -52,16 +56,11 @@ def to_input_array_to_process(
     fn(*method_params)
 
 
-r"""
-Filters will call a method while interpreting the prop value in a way
-that it make it compatible with the method profile.
-"""
-
-
 def to_size(pxm, obj_id, prop_name, method_name, **kwargs):
+    """Figure our value size for method call"""
     _proxy = pxm.get(obj_id)
     prop_value = _proxy[prop_name]
-    size = 0
+    size = 1
     if isinstance(prop_value, list):
         size = len(prop_value)
     print(f"{method_name}({size})")
@@ -69,6 +68,14 @@ def to_size(pxm, obj_id, prop_name, method_name, **kwargs):
 
 
 def map_index_value(pxm, obj_id, prop_name, method_name, start_index=0, **kwargs):
+    """
+    Map a list value to many calls with index:
+
+    value = [x, y, z]
+      > obj.SetValue(0, x)
+      > obj.SetValue(1, y)
+      > obj.SetValue(2, z)
+    """
     _proxy = pxm.get(obj_id)
     prop_values = _proxy[prop_name]
     fn = getattr(_proxy.object, method_name)
@@ -84,6 +91,7 @@ def map_index_value(pxm, obj_id, prop_name, method_name, start_index=0, **kwargs
 
 
 def to_bool(pxm, obj_id, prop_name, method_name, **kwargs):
+    """Coerce property value to a boolean"""
     _proxy = pxm.get(obj_id)
     fn = getattr(_proxy.object, method_name)
     value = _proxy[prop_name]
@@ -99,6 +107,7 @@ def to_bool(pxm, obj_id, prop_name, method_name, **kwargs):
 
 
 def to_self(pxm, obj_id, prop_name, method_name, modified=False, **kwargs):
+    """Coerce property value to itself of concrete object when proxy"""
     _proxy = pxm.get(obj_id)
     fn = getattr(_proxy.object, method_name)
     value = _proxy[prop_name]

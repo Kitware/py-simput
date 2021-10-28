@@ -1,8 +1,6 @@
 from simput.core import ObjectValue, Proxy, PropertyDomain, ProxyDomain, ProxyManager
 from simput import handlers
 
-# from icecream import ic
-
 # -----------------------------------------------------------------------------
 # Domains types
 # -----------------------------------------------------------------------------
@@ -13,6 +11,9 @@ from simput import handlers
 # - IsEqual: Create condition that can then be used in UI visibility
 # - FieldSelector: Select array for a given property
 # - Range: Compute min/max/mean of a given array range
+# - BoundsCenter: Compute center using bounds of algo, ds, bounds
+# - ResetOnChange: Use to reset other domain for default value computation
+# - LabelList: Static list of text/value pair
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
@@ -104,8 +105,6 @@ class IsEqual(PropertyDomain):
         domain = pxd.get_property_domains(self._property_name).get(self._available)
         _available = domain.available()
 
-        # ic("IsEqual:valid", _v, _available, self._value)
-
         if _v == self._value:
             return True
 
@@ -182,7 +181,6 @@ class FieldSelector(PropertyDomain):
                     "location": self.__array_location,
                     "components": array.GetNumberOfComponents(),
                     "type": array.GetClassName(),
-                    # "range": array.GetRange(-1) if hasattr(array, "GetRange") else None,
                 }
             )
         return result
@@ -283,7 +281,7 @@ class Range(PropertyDomain):
                     self.value = [_v]
             else:
                 self.value = _v
-            # ic("Set Range value", data_range, _v)
+
             self._should_compute_value = False
             return True
         return False
@@ -317,11 +315,6 @@ class Range(PropertyDomain):
             return self.__static_range
 
         # Get array from FieldSelector
-        # print("_proxy_domain_manager", self._proxy_domain_manager)
-        # print("self._proxy.id", self._proxy.id)
-        # print("self.__prop_array", self.__prop_array)
-        # print("proxy domains", self._proxy_domain_manager.get(self._proxy.id))
-        # print("self.__prop_array", self.__prop_array)
         _proxy_domains = self._proxy_domain_manager.get(self._proxy.id)
         if _proxy_domains:
             _prop_domains = _proxy_domains.get_property_domains(self.__prop_array)
@@ -329,7 +322,6 @@ class Range(PropertyDomain):
                 if isinstance(domain, FieldSelector):
                     field = domain.get_field()
                     if field:
-                        # ic("Range", field.GetRange(component))
                         return field.GetRange(component)
 
         return None

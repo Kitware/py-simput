@@ -1,5 +1,4 @@
 import xml.etree.ElementTree as ET
-import json
 
 VUETIFY_MAP = {
     "ui": "div",
@@ -77,8 +76,6 @@ class VuetifyResolver:
         return elem.tag, attributes
 
     def process_node(self, in_elem):
-        # print("process_node", in_elem.tag)
-
         # xml mapping
         key = in_elem.get("name")
         elem_lan = None

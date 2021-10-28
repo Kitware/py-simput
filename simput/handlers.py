@@ -1,3 +1,10 @@
+# Handlers are helper for managing concrete objects
+# i.e.: Extract list of fields from a vtkAlgo/vtkDataset
+#
+# They are not used by the user directly, but
+# only within the domains implementations
+
+
 class FieldRangeHandler:
     @staticmethod
     def evaluate(object_manager, obj, field_info):
@@ -101,11 +108,6 @@ class ListArrays:
                 if keep:
                     result.append(array)
 
-        # print("-"*80)
-        # print("Array extract dataset...")
-        # print("-"*80)
-        # print(result)
-        # print("-"*80)
         return result
 
 
@@ -114,13 +116,6 @@ class BoundsExtractor:
     def evaluate(obj_algo_ds):
         if obj_algo_ds is None:
             return None
-
-        # print("#"*80)
-        # print("# BoundsExtractor")
-        # print("#"*80)
-        # print(obj_algo_ds.GetClassName())
-        # print(dir(obj_algo_ds))
-        # print("#"*80)
 
         ds = obj_algo_ds
         if obj_algo_ds.IsA("vtkAlgorithm"):

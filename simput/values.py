@@ -1,3 +1,6 @@
+r"""
+Values are light weight object which can be assimilated as native type.
+"""
 from simput.core import ObjectValue
 
 
@@ -41,7 +44,5 @@ class Array(ObjectValue):
 # -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
-
-
 def register_values():
     ObjectValue.register("value::Array", Array)

@@ -1,7 +1,4 @@
 def extract_ui(yaml_content):
-    print("-" * 80)
-    print("Start UI extract")
-    print("-" * 80)
     ui_map = {}
     prop_indent = 10
     current_type = None
@@ -19,7 +16,7 @@ def extract_ui(yaml_content):
         if indent == 0:
             # Detect new object definition
             if current_type:
-                print(f"Add ui for {current_type}")
+                # print(f"Add ui for {current_type}")
                 current_list.insert(0, f'<ui id="{current_type}">')
                 current_list.append("</ui>")
                 ui_map[current_type] = "\n".join(current_list)
@@ -45,17 +42,15 @@ def extract_ui(yaml_content):
                 current_list.append(f'  <proxy name="{last_property}" />')
 
             if indent > prop_indent or sline[0] == "_":
-                # print(f"skip b: {sline}")
                 continue
 
             current_list.append(f'  <input name="{sline}" />')
             last_property = sline
 
     # Always have a ui container
-    print(f"Add ui for {current_type}")
+    # print(f"Add ui for {current_type}")
     current_list.insert(0, f'<ui id="{current_type}">')
     current_list.append("</ui>")
     ui_map[current_type] = "\n".join(current_list)
-    print("-" * 80)
 
     return ui_map
