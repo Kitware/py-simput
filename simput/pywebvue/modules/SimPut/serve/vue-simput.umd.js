@@ -7179,7 +7179,7 @@ var TextArea_component = normalizeComponent(
 
 /* harmony default export */ var TextArea = (TextArea_component.exports);
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1a02fa22-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./VueSimput/src/widgets/TextField/template.html?vue&type=template&id=468c6120&
-var templatevue_type_template_id_468c6120_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-col',{staticStyle:{"position":"relative"},attrs:{"fluid":""}},[_c('div',{staticStyle:{"position":"absolute","right":"10px","top":"-1px","z-index":"1"}},[(_vm.allowRefresh)?_c('v-btn',{attrs:{"icon":"","x-small":""},on:{"click":_vm.refresh}},[_c('v-icon',{attrs:{"small":""}},[_vm._v("mdi-sync")])],1):_vm._e(),(_vm.help)?_c('v-btn',{attrs:{"icon":"","x-small":""},on:{"click":function($event){_vm.showHelp = !_vm.showHelp}}},[_c('v-icon',{attrs:{"small":""}},[_vm._v("mdi-lifebuoy")])],1):_vm._e(),(_vm.computedSizeControl)?_c('v-btn',{attrs:{"icon":"","x-small":""},on:{"click":_vm.addEntry}},[_c('v-icon',{attrs:{"small":""}},[_vm._v("mdi-plus-circle-outline")])],1):_vm._e()],1),_c('v-row',[(_vm.label && _vm.size != 1)?_c('v-col',{staticClass:"py-0"},[_c('div',{staticClass:"text-caption text--secondary"},[_vm._v(_vm._s(_vm.label))]),_c('v-divider'),(_vm.help && _vm.showHelp)?_c('div',{staticClass:"text-caption text--secondary"},[_vm._v(" "+_vm._s(_vm.help)+" ")]):_vm._e()],1):_vm._e()],1),_c('v-row',[(_vm.size == 1)?_c('v-col',{staticClass:"pt-0 pb-1"},[_c('v-text-field',{attrs:{"name":((_vm.data().type) + ":" + _vm.name + ":" + _vm.i),"background-color":_vm.color(),"label":_vm.label,"hint":_vm.help,"dens":"","rules":[_vm.rule],"persistent-hint":_vm.showHelp},on:{"input":function($event){return _vm.update()},"blur":function($event){return _vm.validate()},"keydown":function($event){if(!$event.type.indexOf('key')&&_vm._k($event.keyCode,"enter",13,$event.key,"Enter")){ return null; }return _vm.validate()}},model:{value:(_vm.model),callback:function ($$v) {_vm.model=$$v},expression:"model"}}),_vm._l((_vm.hints),function(hint,idx){return _c('v-alert',{key:idx,staticClass:"mb-1",attrs:{"type":_vm.levelToType(hint.level),"border":"left","dense":"","icon":_vm.levelToIcon(hint.level)}},[_vm._v(" "+_vm._s(hint.message)+" ")])})],2):_vm._e(),_vm._l((_vm.computedSize),function(i){return (_vm.size != 1)?_c('v-col',_vm._b({key:i,staticClass:"py-1"},'v-col',_vm.getComponentProps(i-1),false),[_c('v-row',{staticClass:"align-center",attrs:{"no-gutters":""}},[_c('v-text-field',{staticClass:"mt-0",attrs:{"name":((_vm.data().type) + ":" + _vm.name + ":" + i),"background-color":_vm.color(i),"dense":"","rules":[_vm.rule],"hide-details":_vm.size == -1},on:{"input":function($event){return _vm.update(i)},"blur":function($event){return _vm.validate(i)},"keydown":function($event){if(!$event.type.indexOf('key')&&_vm._k($event.keyCode,"enter",13,$event.key,"Enter")){ return null; }return _vm.validate(i)}},model:{value:(_vm.model[i - 1]),callback:function ($$v) {_vm.$set(_vm.model, i - 1, $$v)},expression:"model[i - 1]"}}),(_vm.computedSizeControl)?_c('v-btn',{staticClass:"ml-2",attrs:{"icon":"","x-small":""},on:{"click":function($event){return _vm.deleteEntry(i - 1)}}},[_c('v-icon',[_vm._v("mdi-minus-circle-outline")])],1):_vm._e()],1),_vm._l((_vm.hints),function(hint,idx){return _c('v-alert',{key:idx,staticClass:"mb-1",attrs:{"type":_vm.levelToType(hint.level),"border":"left","dense":"","icon":_vm.levelToIcon(hint.level)}},[_vm._v(" "+_vm._s(hint.message)+" ")])})],2):_vm._e()})],2)],1)}
+var templatevue_type_template_id_468c6120_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-col',{staticStyle:{"position":"relative"},attrs:{"fluid":""}},[_c('div',{staticStyle:{"position":"absolute","right":"10px","top":"-1px","z-index":"1"}},[(_vm.allowRefresh)?_c('v-btn',{attrs:{"icon":"","x-small":""},on:{"click":_vm.refresh}},[_c('v-icon',{attrs:{"small":""}},[_vm._v("mdi-sync")])],1):_vm._e(),(_vm.help)?_c('v-btn',{attrs:{"icon":"","x-small":""},on:{"click":function($event){_vm.showHelp = !_vm.showHelp}}},[_c('v-icon',{attrs:{"small":""}},[_vm._v("mdi-lifebuoy")])],1):_vm._e(),(_vm.computedSizeControl)?_c('v-btn',{attrs:{"icon":"","x-small":""},on:{"click":_vm.addEntry}},[_c('v-icon',{attrs:{"small":""}},[_vm._v("mdi-plus-circle-outline")])],1):_vm._e()],1),_c('v-row',[(_vm.label && _vm.size != 1)?_c('v-col',{staticClass:"py-0"},[_c('div',{staticClass:"text-caption text--secondary"},[_vm._v(_vm._s(_vm.label))]),_c('v-divider'),(_vm.help && _vm.showHelp)?_c('div',{staticClass:"text-caption text--secondary"},[_vm._v(" "+_vm._s(_vm.help)+" ")]):_vm._e()],1):_vm._e()],1),_c('v-row',[(_vm.size == 1)?_c('v-col',{staticClass:"pt-0 pb-1"},[_c('v-text-field',{attrs:{"name":((_vm.data().type) + ":" + _vm.name + ":" + _vm.i),"background-color":_vm.color(),"label":_vm.label,"hint":_vm.help,"dens":"","rules":[_vm.rule],"persistent-hint":_vm.showHelp},on:{"input":function($event){return _vm.update()},"blur":function($event){return _vm.validate()},"keydown":function($event){if(!$event.type.indexOf('key')&&_vm._k($event.keyCode,"enter",13,$event.key,"Enter")){ return null; }return _vm.validate()}},model:{value:(_vm.model),callback:function ($$v) {_vm.model=$$v},expression:"model"}}),_vm._l((_vm.hints),function(hint,idx){return _c('v-alert',{key:idx,staticClass:"mb-1",attrs:{"type":_vm.levelToType(hint.level),"border":"left","dense":"","icon":_vm.levelToIcon(hint.level)}},[_vm._v(" "+_vm._s(hint.message)+" ")])})],2):_vm._e(),_vm._l((_vm.computedSize),function(i){return (_vm.size != 1)?_c('v-col',_vm._b({key:i,staticClass:"py-1"},'v-col',_vm.getComponentProps(i-1),false),[_c('v-row',{staticClass:"align-center",attrs:{"no-gutters":""}},[_c('v-text-field',{staticClass:"mt-0",attrs:{"name":((_vm.data().type) + ":" + _vm.name + ":" + i),"background-color":_vm.color(i),"dense":"","rules":[_vm.rule],"hide-details":_vm.size == -1},on:{"input":function($event){return _vm.update(i)},"blur":function($event){return _vm.validate(i)},"keydown":function($event){if(!$event.type.indexOf('key')&&_vm._k($event.keyCode,"enter",13,$event.key,"Enter")){ return null; }return _vm.validate(i)}},model:{value:(_vm.model[i - 1]),callback:function ($$v) {_vm.$set(_vm.model, i - 1, $$v)},expression:"model[i - 1]"}}),(_vm.computedSizeControl)?_c('v-btn',{staticClass:"ml-2",attrs:{"icon":"","x-small":""},on:{"click":function($event){return _vm.deleteEntry(i - 1)}}},[_c('v-icon',[_vm._v("mdi-minus-circle-outline")])],1):_vm._e()],1)],1):_vm._e()})],2),_c('v-col',{staticClass:"px-0 mt-1"},_vm._l((_vm.hints),function(hint,idx){return _c('v-alert',{key:idx,staticClass:"mb-1",attrs:{"type":_vm.levelToType(hint.level),"border":"left","dense":"","icon":_vm.levelToIcon(hint.level)}},[_vm._v(" "+_vm._s(hint.message)+" ")])}),1)],1)}
 var templatevue_type_template_id_468c6120_staticRenderFns = []
 
 
@@ -7230,6 +7230,10 @@ var templatevue_type_template_id_468c6120_staticRenderFns = []
     allowRefresh: {
       type: Boolean,
       default: false
+    },
+    newValue: {
+      type: String,
+      default: 'same'
     }
   },
   data: function data() {
@@ -7297,10 +7301,12 @@ var templatevue_type_template_id_468c6120_staticRenderFns = []
       return ((_TYPES$this$type2 = TYPES[this.type]) === null || _TYPES$this$type2 === void 0 ? void 0 : _TYPES$this$type2.convert) || FALLBACK_CONVERT;
     },
     hints: function hints() {
+      var _this$domains, _this$domains$this$na5;
+
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
 
-      return this.domains()[this.name].hints || [];
+      return ((_this$domains = this.domains()) === null || _this$domains === void 0 ? void 0 : (_this$domains$this$na5 = _this$domains[this.name]) === null || _this$domains$this$na5 === void 0 ? void 0 : _this$domains$this$na5.hints) || [];
     }
   },
   methods: {
@@ -7344,6 +7350,13 @@ var templatevue_type_template_id_468c6120_staticRenderFns = []
 
       this.dynamicSize = this.model.length + 1;
       this.model.length = this.dynamicSize;
+
+      if (this.newValue === 'null') {
+        this.model[this.model.length - 1] = null;
+      } else if (this.newValue === 'same') {
+        this.model[this.model.length - 1] = this.model[this.model.length - 2];
+      }
+
       this.validate(this.dynamicSize);
     },
     deleteEntry: function deleteEntry(index) {
