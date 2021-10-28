@@ -1,3 +1,17 @@
+# [2.0.0](https://github.com/Kitware/py-simput/compare/v1.0.4...v2.0.0) (2021-10-28)
+
+
+### Features
+
+* **simput:** Rework engine for conisistency ([33f07a0](https://github.com/Kitware/py-simput/commit/33f07a050286de80af18fc39558b86d56fd8f593))
+
+
+### BREAKING CHANGES
+
+* **simput:** Simput philosophy remain the same but some model
+definition have changed and internal classes have been renamed.
+The way simput needs to be initialized is now different.
+
 ## [1.0.4](https://github.com/Kitware/py-simput/compare/v1.0.3...v1.0.4) (2021-10-05)
 
 
