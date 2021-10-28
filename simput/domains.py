@@ -28,6 +28,7 @@ from simput import handlers
 class ProxyBuilder(PropertyDomain):
     def __init__(self, _proxy: Proxy, _property: str, _domain_manager=None, **kwargs):
         super().__init__(_proxy, _property, _domain_manager, **kwargs)
+        self._message = "ProxyBuilder"
         self._items = kwargs.get("values", [])
         self._selection = kwargs.get("initial", None)
         self._proxy_map = {}
@@ -76,7 +77,7 @@ class ProxyBuilder(PropertyDomain):
                 {
                     "level": self._level,
                     "message": self._message,
-                    "value": self.value,
+                    "value": self.value.id if self.value else None,
                     "allowed": self._items,
                 }
             ]
@@ -190,9 +191,10 @@ class FieldSelector(PropertyDomain):
         if self._level < required_level:
             return True
 
-        v = self.value
-        for item in self._items:
-            if item.get("name", None) == v:
+        _v = self.value
+        _items = self.available()
+        for item in _items:
+            if item.get("value") == _v:
                 return True
         return False
 
@@ -294,8 +296,21 @@ class Range(PropertyDomain):
             return True
 
         _v = self.value
+        if _v is None:
+            return False
+
         _range = self.available()
-        return _v >= _range[0] and _v <= _range[1]
+        self._message = f"Value outside of {_range}"
+        if isinstance(_v, list):
+            _valid = True
+            for __v in _v:
+                if __v is None:
+                    continue
+                if __v < _range[0] or __v > _range[1]:
+                    _valid = False
+            return _valid
+
+        return _v >= _range[0] or _v <= _range[1]
 
     def get_range(self, component=-1):
         if self.__static_range:

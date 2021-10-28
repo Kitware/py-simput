@@ -288,6 +288,7 @@ Representation:
     domains:
       - type: Range
         value_range: [0, 1]
+        level: 2
   Visibility:
     size: 1
     type: uint8

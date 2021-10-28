@@ -77,17 +77,19 @@
           <v-icon>mdi-minus-circle-outline</v-icon>
         </v-btn>
       </v-row>
-      <v-alert
-        v-for="hint, idx in hints"
-        :key="idx"
-        class="mb-1"
-        :type="levelToType(hint.level)"
-        border="left"
-        dense
-        :icon="levelToIcon(hint.level)"
-      >
-        {{ hint.message }}
-      </v-alert>
     </v-col>
   </v-row>
+  <v-col class="px-0 mt-1">
+    <v-alert
+      v-for="hint, idx in hints"
+      :key="idx"
+      class="mb-1"
+      :type="levelToType(hint.level)"
+      border="left"
+      dense
+      :icon="levelToIcon(hint.level)"
+    >
+      {{ hint.message }}
+    </v-alert>
+  </v-col>
 </v-col>

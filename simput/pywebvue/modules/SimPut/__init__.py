@@ -119,15 +119,25 @@ class SimputHelper:
             self.push(id=_id, domains=_id)
 
     def refresh(self, id=0, property=""):
-        print("refresh +++ TODO")
-        # if self._ui_manager.proxymanager.refresh(id, property):
-        #     _props = self._ui_manager.proxymanager.get(id).get("properties", {})
-        #     _prop_to_push = {property: _props[property]}
-        #     self._ui_manager.proxymanager._push(id, _prop_to_push)
-        #     self._ui_manager.proxymanager._emit("change", ids=[id])
-        #     self._app.protocol_call(
-        #         "simput.push", self._ui_manager.id, id=id, type=None
-        #     )
+        if not self._domains_manager:
+            return
+
+        proxy_domains = self._domains_manager.get(id)
+        if not proxy_domains:
+            return
+
+        # Reset
+        change_count = 0
+        for domain in proxy_domains.get_property_domains(property).values():
+            domain.enable_set_value()
+            change_count += domain.set_value()
+
+        print("reset", change_count)
+        if change_count:
+            self.apply()
+            with self._domains_manager.dirty_ids() as dirty_ids:
+                for _id in dirty_ids:
+                    self.push(id=_id)
 
     def push(self, id=None, type=None, domains=None):
         if id:

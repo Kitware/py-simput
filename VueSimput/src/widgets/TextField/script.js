@@ -40,6 +40,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    newValue: {
+      type: String,
+      default: 'same',
+    },
   },
   data() {
     return {
@@ -90,7 +94,7 @@ export default {
     hints() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
-      return this.domains()[this.name].hints || [];
+      return this.domains()?.[this.name]?.hints || [];
     },
   },
   methods: {
@@ -127,6 +131,13 @@ export default {
       }
       this.dynamicSize = this.model.length + 1;
       this.model.length = this.dynamicSize;
+
+      if (this.newValue === 'null') {
+        this.model[this.model.length - 1] = null;
+      } else if (this.newValue === 'same') {
+        this.model[this.model.length - 1] = this.model[this.model.length - 2];
+      }
+
       this.validate(this.dynamicSize);
     },
     deleteEntry(index) {
