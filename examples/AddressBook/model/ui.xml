@@ -18,9 +18,4 @@
             </row>
         </col>
     </ui>
-
-    <ui id="Agenda">
-        <table name="Contacts" columns="FirstName,LastName,City,State,Country" select="Active" />
-        <panel name="Active" />
-    </ui>
 </layouts>
