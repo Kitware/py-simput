@@ -25,7 +25,7 @@ Simput rely on 3 types of managers that build on top of each other and are respo
 
 ## ProxyManager
 
-Definition handling
+__Definition handling__
 
 ```python
 def load_model(self, yaml_file=None, yaml_content=None):
@@ -42,7 +42,7 @@ def types(self, *with_tags):
     """List proxy_types from definition that has the set of provided tags"""
 ```
 
-Proxy Management
+__Proxy Management__
 
 ```python
 def create(self, proxy_type, **initial_values):
@@ -71,7 +71,7 @@ def update(self, change_set):
     """
 ```
 
-Import / Export
+__Import / Export__
 
 ```python
 def save(self, file_output=None):
@@ -81,7 +81,7 @@ def load(self, file_input=None, file_content=None):
     """Load previously exported state from a file"""
 ```
 
-Commit / Reset
+__Commit / Reset__
 
 ```python
 def commit_all(self):
@@ -91,7 +91,7 @@ def reset_all(self):
     """Reset all dirty proxies"""
 ```
 
-Find / Query Proxy
+__Find / Query Proxy__
 
 ```python
 def get_instances_of_type(self, proxy_type):
