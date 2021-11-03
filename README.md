@@ -170,7 +170,7 @@ In order to support several languages easily we allow the user to separate them 
 # fr.yaml
 vtkSphereSource:
     _label: Sphère
-    _help: Genère un maiilage représentant une sphère
+    _help: Génère un maillage représentant une sphère
     Radius:
         _label: Rayon
     Center:
