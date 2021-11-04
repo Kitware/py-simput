@@ -93,7 +93,8 @@ def update_view(*args, **kwargs):
 @app.trigger("create")
 def create_object(name, type):
     obj = pxm.create(type, _name=name)
-    fetch(obj, list(obj.get_properties().keys()))
+    print(obj.list_property_names())
+    fetch(obj, obj.list_property_names())
     app.set("activeId", obj.id)
 
 

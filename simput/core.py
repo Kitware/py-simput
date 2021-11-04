@@ -72,14 +72,13 @@ class Proxy:
             "tags",
             "own",
             "set_property",
-            "set_properties",
-            "get_properties",
+            "get_property",
+            "list_property_names",
             "commit",
             "reset",
             "on",
             "off",
             "state",
-            "update_from_state",
             "remap_ids",
         ]
     )
@@ -226,24 +225,17 @@ class Proxy:
 
         return change_detected
 
-    def set_properties(self, props):
-        """Update a set of properties on that proxy"""
-        change_count = 0
-        for name, value in props.items():
-            if self.set_property(name, value):
-                change_count += 1
+    def get_property(self, name, default=None):
+        """Return a property value"""
+        value = self._properties.get(name, default)
+        if "proxy" == self.definition.get(name).get("type"):
+            return self._proxy_manager.get(self._properties.get(name))
 
-        self._emit(
-            "update",
-            modified=(change_count > 0),
-            properties_dirty=list(self._dirty_properties),
-            properties_change=list(props.keys()),
-        )
-        return change_count
+        return value
 
-    def get_properties(self):
-        """Return the properties map"""
-        return self._properties
+    def list_property_names(self):
+        """Return the list of property names"""
+        return [name for name in self.definition if not name.startswith("_")]
 
     def commit(self):
         """Flush modified properties"""
@@ -303,7 +295,7 @@ class Proxy:
 
             return self._properties[name]
 
-        # ic("ERROR: __getitem__", name)
+        # print("ERROR: __getitem__", name)
 
         raise AttributeError()
 
@@ -369,11 +361,12 @@ class Proxy:
             "properties": _properties,
         }
 
-    def update_from_state(self, state):
+    @state.setter
+    def state(self, value):
         """Use to rebuild a proxy state from an exported state"""
-        self._own = set(state.get("own", []))
-        self._tags.update(state.get("tags", []))
-        for prop_name, prop_value in state.get("properties", {}).items():
+        self._own = set(value.get("own", []))
+        self._tags.update(value.get("tags", []))
+        for prop_name, prop_value in value.get("properties", {}).items():
             self.set_property(prop_name, prop_value)
 
         for tag in self._tags:
@@ -950,7 +943,6 @@ class ProxyManager:
 
         return result
 
-
     # -------------------------------------------------------------------------
     # Import / Export
     # -------------------------------------------------------------------------
@@ -997,7 +989,7 @@ class ProxyManager:
             _type = proxy_state["type"]
             _proxy = self.create(_type)
             _id_remap[_id] = _proxy.id
-            _proxy.update_from_state(proxy_state)
+            _proxy.state = proxy_state
             _new_ids.append(_proxy.id)
 
         # Remap ids
