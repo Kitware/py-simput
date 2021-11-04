@@ -59,7 +59,7 @@ ui_manager.load_ui(xml_content=app.txt("./model/ui.xml"))
 simput = SimPut.create_helper(ui_manager)
 
 # Fill drop down with available objects
-app.set("objTypes", list(pxm.available_types))
+app.set("objTypes", pxm.types())
 
 # -----------------------------------------------------------------------------
 # VTK management

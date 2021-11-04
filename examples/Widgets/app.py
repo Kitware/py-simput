@@ -41,7 +41,7 @@ simput = SimPut.create_helper(ui_manager, pdm)
 # -----------------------------------------------------------------------------
 
 choices = []
-for obj_type in pxm.available_types:
+for obj_type in pxm.types():
     item = pxm.create(obj_type)
     choices.append({"text": obj_type, "value": item.id})
 

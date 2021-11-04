@@ -807,10 +807,16 @@ class ProxyManager:
         """Return a loaded definition for a given object_type"""
         return self._model_definition[obj_type]
 
-    @property
-    def available_types(self):
-        """List all the object_types that have been loaded"""
-        return self._model_definition.keys()
+    def types(self, *with_tags):
+        """List proxy_types from definition that has the set of provided tags"""
+        result = []
+        tag_filter = set(with_tags)
+        for type_name in self._model_definition.keys():
+            has_tag = set(self._model_definition[type_name].get("_tags", []))
+            if tag_filter.issubset(has_tag):
+                result.append(type_name)
+
+        return result
 
     # -------------------------------------------------------------------------
     # Proxy management
@@ -944,16 +950,6 @@ class ProxyManager:
 
         return result
 
-    def types(self, *with_tags):
-        """List proxy_types from definition that has the set of provided tags"""
-        result = []
-        tag_filter = set(with_tags)
-        for type_name in self._model_definition.keys():
-            has_tag = set(self._model_definition[type_name].get("_tags", []))
-            if tag_filter.issubset(has_tag):
-                result.append(type_name)
-
-        return result
 
     # -------------------------------------------------------------------------
     # Import / Export
