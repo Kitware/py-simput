@@ -1,3 +1,11 @@
+## [2.0.1](https://github.com/Kitware/py-simput/compare/v2.0.0...v2.0.1) (2021-11-04)
+
+
+### Bug Fixes
+
+* **api:** Improve api consistency ([3c90a81](https://github.com/Kitware/py-simput/commit/3c90a810de97023fbd853f72517f3d9e196e58b1))
+* **api:** Remove duplicate method ([cf09f9d](https://github.com/Kitware/py-simput/commit/cf09f9d3578c6300f2e05e6e4684ecec4c43ddab))
+
 # [2.0.0](https://github.com/Kitware/py-simput/compare/v1.0.4...v2.0.0) (2021-10-28)
 
 
