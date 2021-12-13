@@ -60,6 +60,7 @@ class SimputHelper:
         self.fetch_key = f"{namespace}Fetch"
         self.update_key = f"{namespace}Update"
         self.refresh_key = f"{namespace}Refresh"
+        self.reset_cache_key = f"{namespace}ResetCache"
 
         # Attach annotations
         self._app.set(self.id_key, self._ui_manager.id)
@@ -71,6 +72,7 @@ class SimputHelper:
         self._app.trigger(self.fetch_key)(self.push)
         self._app.trigger(self.update_key)(self.update)
         self._app.trigger(self.refresh_key)(self.refresh)
+        self._app.trigger(self.reset_cache_key)(self.reset_cache)
         self._app.change(self.auto_key)(self._update_auto)
 
         # Monitor ui change
@@ -136,6 +138,9 @@ class SimputHelper:
 
             if self._auto_update:
                 self.apply()
+
+    def reset_cache(self):
+        self._app.protocol_call("simput.reset.cache")
 
     def push(self, id=None, type=None, domains=None):
         if id:
@@ -235,6 +240,10 @@ class SimputHelper:
 class SimputProtocol(LinkProtocol):
     def __init__(self):
         super().__init__()
+        self.reset_cache()
+
+    @exportRpc("simput.reset.cache")
+    def reset_cache(self):
         self.net_cache_domains = {}
 
     @exportRpc("simput.push")

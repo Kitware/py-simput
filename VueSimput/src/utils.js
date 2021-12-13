@@ -12,10 +12,8 @@ export class DataManager {
     this.subscription = this.wsClient
       .getConnection()
       .getSession()
-      .subscribe('simput.push', ([event]) => {
-        const {
-          id, data, domains, type, ui,
-        } = event;
+      .subscribe("simput.push", ([event]) => {
+        const { id, data, domains, type, ui } = event;
         if (data) {
           console.log(`data(${id})`);
           delete this.pending[id];
@@ -43,29 +41,29 @@ export class DataManager {
           this.cache.ui[type] = ui;
         }
 
-        this.notify('change', { id, type });
+        this.notify("change", { id, type });
         if (ui) {
           this.nextTS += 1;
-          this.notify('templateTS');
+          this.notify("templateTS");
         }
       });
     this.subscriptionUI = this.wsClient
       .getConnection()
       .getSession()
-      .subscribe('simput.event', ([event]) => {
-        if (event.topic === 'ui-change') {
+      .subscribe("simput.event", ([event]) => {
+        if (event.topic === "ui-change") {
           const typesToFetch = Object.keys(this.cache.ui);
           this.cache.ui = {};
           for (let i = 0; i < typesToFetch.length; i++) {
             this.getUI(typesToFetch[i]);
           }
         }
-        if (event.topic === 'data-change') {
+        if (event.topic === "data-change") {
           const { ids, action } = event;
           for (let i = 0; i < ids.length; i++) {
             if (this.cache.data[ids[i]]) {
-              if (action === 'changed') {
-                console.log('getData from data-change', ids[i]);
+              if (action === "changed") {
+                console.log("getData from data-change", ids[i]);
                 this.getData(ids[i], true);
               }
             }
@@ -75,7 +73,7 @@ export class DataManager {
 
     this.onDirty = ({ id, name }) => {
       const value = this.cache.data[id].properties[name];
-      console.log(' > dirty', id, name);
+      console.log(" > dirty", id, name);
       this.wsClient
         .getRemote()
         .PyWebVue.trigger(`${this.namespace}Update`, [[{ id, name, value }]]);
@@ -88,21 +86,22 @@ export class DataManager {
       ui: {},
       domains: {},
     };
+    this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}ResetCache`, []);
   }
 
   connectBus(bus) {
     if (this.comm.indexOf(bus) === -1) {
       this.comm.push(bus);
-      bus.$emit('connect');
-      bus.$on('dirty', this.onDirty);
+      bus.$emit("connect");
+      bus.$on("dirty", this.onDirty);
     }
   }
 
   disconnectBus(bus) {
     const index = this.comm.indexOf(bus);
     if (index > -1) {
-      bus.$emit('disconnect');
-      bus.$off('dirty', this.onDirty);
+      bus.$emit("disconnect");
+      bus.$off("dirty", this.onDirty);
       this.comm.splice(index, 1);
     }
   }
@@ -116,7 +115,7 @@ export class DataManager {
   getData(id, forceFetch = false) {
     const data = this.cache.data[id];
     if ((!data || forceFetch) && !this.pending[id]) {
-      console.log(' > fetch data', id, forceFetch);
+      console.log(" > fetch data", id, forceFetch);
       this.pending[id] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { id });
     }
@@ -128,7 +127,7 @@ export class DataManager {
     const domains = this.cache.domains[id];
 
     if ((!domains || forceFetch) && !this.pending[`d-${id}`]) {
-      console.log(' > fetch domain', id, forceFetch);
+      console.log(" > fetch domain", id, forceFetch);
       this.pending[`d-${id}`] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { domains: id });
     }
@@ -140,7 +139,7 @@ export class DataManager {
     const ui = this.cache.ui[type];
 
     if ((!ui || forceFetch) && !this.pending[type]) {
-      console.log(' > fetch ui', type, forceFetch);
+      console.log(" > fetch ui", type, forceFetch);
       this.pending[type] = true;
       this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Fetch`, [], { type });
     }
@@ -153,7 +152,7 @@ export class DataManager {
   }
 
   refresh(id, name) {
-    console.log(' > refresh', id, name);
+    console.log(" > refresh", id, name);
     this.wsClient.getRemote().PyWebVue.trigger(`${this.namespace}Refresh`, [id, name]);
   }
 }
