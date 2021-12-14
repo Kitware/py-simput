@@ -1,3 +1,11 @@
+## [2.0.2](https://github.com/Kitware/py-simput/compare/v2.0.1...v2.0.2) (2021-12-14)
+
+
+### Bug Fixes
+
+* **domains:** Allow null Range components ([6078f90](https://github.com/Kitware/py-simput/commit/6078f900018bbd79c0ffb4750b343d07f339490b))
+* **domains:** Reset domain cache on client refresh ([defe4db](https://github.com/Kitware/py-simput/commit/defe4db8a19af3383ba510c3605e7973ddd3adc9))
+
 ## [2.0.1](https://github.com/Kitware/py-simput/compare/v2.0.0...v2.0.1) (2021-11-04)
 
 
