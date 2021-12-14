@@ -310,11 +310,15 @@ class Range(PropertyDomain):
             for __v in _v:
                 if __v is None:
                     continue
-                if __v < _range[0] or __v > _range[1]:
+                if _range[0] is not None and __v < _range[0]:
+                    _valid = False
+                if _range[1] is not None and __v > _range[1]:
                     _valid = False
             return _valid
 
-        return _v >= _range[0] and _v <= _range[1]
+        lower = (_range[0] is None or _v >= _range[0])
+        upper = (_range[1] is None or _v <= _range[1])
+        return lower and upper 
 
     def get_range(self, component=-1):
         if self.__static_range:
