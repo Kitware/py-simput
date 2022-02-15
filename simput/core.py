@@ -84,7 +84,14 @@ class Proxy:
     )
 
     def __init__(
-        self, __proxy_manager, __type, __object=None, _name=None, _tags=[], **kwargs
+        self,
+        __proxy_manager,
+        __type,
+        __object=None,
+        _name=None,
+        _tags=[],
+        _push_fn=None,
+        **kwargs,
     ):
         self._id = next(Proxy.__id_generator)
         self._name = _name or __type
@@ -97,6 +104,7 @@ class Proxy:
         self._listeners = set()
         self._tags = set(_tags)
         self._tags.update(self.definition.get("_tags", []))
+        self._push_fn = _push_fn if _push_fn is not None else push
 
         # Proxy can be fully virtual (:None)
         self._object = __object
@@ -243,7 +251,7 @@ class Proxy:
         if self._dirty_properties:
             properties_dirty = list(self._dirty_properties)
             if self._object:
-                push(self)
+                self._push_fn(self)
 
             self._pushed_properties.update(self._properties)
             self._dirty_properties.clear()

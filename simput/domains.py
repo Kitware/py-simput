@@ -316,9 +316,9 @@ class Range(PropertyDomain):
                     _valid = False
             return _valid
 
-        lower = (_range[0] is None or _v >= _range[0])
-        upper = (_range[1] is None or _v <= _range[1])
-        return lower and upper 
+        lower = _range[0] is None or _v >= _range[0]
+        upper = _range[1] is None or _v <= _range[1]
+        return lower and upper
 
     def get_range(self, component=-1):
         if self.__static_range:
