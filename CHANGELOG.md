@@ -1,3 +1,10 @@
+## [2.0.4](https://github.com/Kitware/py-simput/compare/v2.0.3...v2.0.4) (2022-02-16)
+
+
+### Bug Fixes
+
+* **ui:** make ui handling more robust to missing keys ([b0ea844](https://github.com/Kitware/py-simput/commit/b0ea844377bfe2916851c20f35e5c1ae14d16b76))
+
 ## [2.0.3](https://github.com/Kitware/py-simput/compare/v2.0.2...v2.0.3) (2022-02-15)
 
 
