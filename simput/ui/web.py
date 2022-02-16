@@ -27,7 +27,7 @@ class VuetifyResolver:
         if elem.tag in VUETIFY_MAP:
             return VUETIFY_MAP[elem.tag], attributes
         elif elem.tag == "input":
-            domains = self._model[elem.get("name")].get("domains", [])
+            domains = self._model.get(elem.get("name"), {}).get("domains", [])
             widget = "sw-text-field"
             for domain in domains:
                 ctype = domain.get("type")
@@ -65,7 +65,7 @@ class VuetifyResolver:
             if widget is None:
                 widget = "sw-text-field"
 
-            if self._model.get(elem.get("name")).get("type", "string") == "bool":
+            if self._model.get(elem.get("name"), {}).get("type", "string") == "bool":
                 widget = "sw-switch"
 
             return widget, attributes
@@ -82,7 +82,7 @@ class VuetifyResolver:
         elem_label = key
         elem_help = None
         if key:
-            elem_lan = self._labels[key]
+            elem_lan = self._labels.get(key)
 
         if elem_lan:
             elem_label = elem_lan.get("_label", key)
@@ -94,7 +94,7 @@ class VuetifyResolver:
 
         # Add name, label, help, size
         out_elem = ET.Element(widget)
-        if key is not None:
+        if key is not None and key in self._model:
             size = self._model.get(key).get("size", 1)
             ptype = self._model.get(key).get("type", "string")
             out_elem.set("name", key)

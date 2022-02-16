@@ -806,7 +806,7 @@ class ProxyManager:
 
     def get_definition(self, obj_type):
         """Return a loaded definition for a given object_type"""
-        return self._model_definition[obj_type]
+        return self._model_definition.get(obj_type)
 
     def types(self, *with_tags):
         """List proxy_types from definition that has the set of provided tags"""
