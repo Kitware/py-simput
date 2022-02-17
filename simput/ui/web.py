@@ -52,8 +52,8 @@ class VuetifyResolver:
                 if ctype == "Range" and level == 2:
                     value_range = domain.get("value_range", None)
                     if value_range:
-                        attributes[":min"] = value_range[0]
-                        attributes[":max"] = value_range[1]
+                        attributes[":min"] = str(value_range[0])
+                        attributes[":max"] = str(value_range[1])
                     widget = "sw-slider"
 
                 if ctype == "UI":
@@ -138,4 +138,4 @@ class VuetifyResolver:
         self._model = None
         self._labels = None
         # print(ET.tostring(out_root, encoding="UTF-8"))
-        return ET.tostring(out_root, encoding="UTF-8")
+        return ET.tostring(out_root, encoding="utf-8").decode("utf-8")

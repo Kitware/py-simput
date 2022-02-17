@@ -1177,7 +1177,6 @@ class UIManager:
         lang_def = self._ui_lang[_type]
         ui_def = self._ui_xml[_type]
         resolved = self._ui_resolver.resolve(model_def, lang_def, ui_def)
-        resolved = resolved.decode("UTF-8")
         self._ui_resolved[_type] = resolved
 
         return resolved
