@@ -1,3 +1,10 @@
+## [2.0.5](https://github.com/Kitware/py-simput/compare/v2.0.4...v2.0.5) (2022-02-17)
+
+
+### Bug Fixes
+
+* **ui:** better xml/string handling ([cbbbc13](https://github.com/Kitware/py-simput/commit/cbbbc131847a9c53b036560cddae1bf741935e4a))
+
 ## [2.0.4](https://github.com/Kitware/py-simput/compare/v2.0.3...v2.0.4) (2022-02-16)
 
 
