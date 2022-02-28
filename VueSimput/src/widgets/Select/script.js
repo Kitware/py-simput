@@ -130,7 +130,7 @@ export default {
   },
   methods: {
     validate() {
-      if (this.multiple) {
+      if (this.multiple || (Array.isArray(this.model))) {
         this.model = this.model.map((v) => this.convert(v));
       } else {
         this.model = this.convert(this.model);
