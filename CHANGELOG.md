@@ -1,3 +1,10 @@
+## [2.0.6](https://github.com/Kitware/py-simput/compare/v2.0.5...v2.0.6) (2022-03-01)
+
+
+### Bug Fixes
+
+* **Select:** Better handling of arrays ([40b59b1](https://github.com/Kitware/py-simput/commit/40b59b168c07e14cf9991757412ccd883f3130a7))
+
 ## [2.0.5](https://github.com/Kitware/py-simput/compare/v2.0.4...v2.0.5) (2022-02-17)
 
 
