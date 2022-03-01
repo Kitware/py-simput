@@ -1,3 +1,10 @@
+## [2.0.7](https://github.com/Kitware/py-simput/compare/v2.0.6...v2.0.7) (2022-03-01)
+
+
+### Bug Fixes
+
+* **domain:** Allow domain to provide widget directly ([e258041](https://github.com/Kitware/py-simput/commit/e25804182f9de6c06563da239f114f4ce7492c59))
+
 ## [2.0.6](https://github.com/Kitware/py-simput/compare/v2.0.5...v2.0.6) (2022-03-01)
 
 
