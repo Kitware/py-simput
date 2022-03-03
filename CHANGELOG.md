@@ -1,3 +1,10 @@
+## [2.0.8](https://github.com/Kitware/py-simput/compare/v2.0.7...v2.0.8) (2022-03-03)
+
+
+### Bug Fixes
+
+* **decorator:** Add support for domain decorator ([4710052](https://github.com/Kitware/py-simput/commit/47100529a6599567e055d7fb47bdf4dc40e05218))
+
 ## [2.0.7](https://github.com/Kitware/py-simput/compare/v2.0.6...v2.0.7) (2022-03-01)
 
 
