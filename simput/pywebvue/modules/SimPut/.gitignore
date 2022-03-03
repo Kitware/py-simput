@@ -1,0 +1,10 @@
+serve/demo.html
+serve/vue-simput.common-report.html
+serve/vue-simput.common.js
+serve/vue-simput.common.js.map
+serve/vue-simput.umd-report.html
+# serve/vue-simput.umd.js
+serve/vue-simput.umd.js.map
+serve/vue-simput.umd.min-report.html
+# serve/vue-simput.umd.min.js
+serve/vue-simput.umd.min.js.map

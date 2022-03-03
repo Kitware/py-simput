@@ -1,5 +1,5 @@
-<v-col>
-  <v-row class="align-center">
+<v-col v-show="decorator.show">
+  <v-row class="ma-0 align-center">
     <v-switch
       class="py-0 mt-0"
       :label="label"
@@ -14,7 +14,7 @@
       <v-icon small>mdi-lifebuoy</v-icon>
     </v-btn>
   </v-row>
-  <v-row v-if="help && showHelp" class="text-caption text--secondary">
+  <v-row v-if="help && showHelp" class="ma-0 text-caption text--secondary">
     {{ help }}
   </v-row>
 </v-col>

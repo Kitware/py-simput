@@ -69,6 +69,11 @@ export default {
         this.properties()[this.name] = v;
       },
     },
+    decorator() {
+      /* eslint-disable no-unused-expressions */
+      this.mtime; // force refresh
+      return this.domains()[this.name]?.decorator?.available || { show: true, enable: true };
+    },
     computedLayout() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh

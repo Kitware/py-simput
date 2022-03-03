@@ -1,0 +1,14 @@
+<v-col class="py-0">
+    <v-color-picker
+      :label="label"
+      :hint="help"
+
+      :persistent-hint="!!(help)"
+      hide-canvas
+      hide-inputs
+      mode="rgba"
+
+      :value="color"
+      @update:color="validate"
+    />
+  </v-col>

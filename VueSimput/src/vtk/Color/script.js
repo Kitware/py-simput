@@ -1,7 +1,5 @@
-import { TYPES, FALLBACK_CONVERT } from '../../types';
-
 export default {
-  name: 'swSwitch',
+  name: 'swVtkColor',
   props: {
     name: {
       type: String,
@@ -30,6 +28,15 @@ export default {
     };
   },
   computed: {
+    color() {
+      const vtkColor = this.model;
+      return {
+        r: Math.round(vtkColor[0] * 255),
+        g: Math.round(vtkColor[1] * 255),
+        b: Math.round(vtkColor[2] * 255),
+        a: Math.round(vtkColor[3] ?? 1),
+      };
+    },
     model: {
       get() {
         /* eslint-disable no-unused-expressions */
@@ -40,20 +47,16 @@ export default {
         this.properties()[this.name] = v;
       },
     },
-    decorator() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      return this.domains()[this.name]?.decorator?.available || { show: true, enable: true };
-    },
-    convert() {
-      return TYPES[this.type]?.convert || FALLBACK_CONVERT;
-    },
   },
   methods: {
-    validate() {
-      this.model = this.convert(this.model);
+    validate({ rgba }) {
+      const vtkColor = [rgba.r / 255, rgba.g / 255, rgba.b / 255];
+      if (this.size === 4) {
+        vtkColor[3] = rgba.a;
+      }
+      this.model = vtkColor;
       this.dirty(this.name);
     },
   },
-  inject: ['data', 'properties', 'domains', 'dirty'],
+  inject: ['data', 'properties', 'domains', 'dirty', 'uiTS', 'simputChannel'],
 };

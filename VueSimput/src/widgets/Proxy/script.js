@@ -11,6 +11,11 @@ export default {
     SimputInput,
   },
   computed: {
+    decorator() {
+      /* eslint-disable no-unused-expressions */
+      this.mtime; // force refresh
+      return this.domains()[this.name]?.decorator?.available || { show: true, enable: true };
+    },
     itemId() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
