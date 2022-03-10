@@ -49,6 +49,31 @@ class ObjectValue:
 
 
 # -----------------------------------------------------------------------------
+# ProxyObjectAdapter
+# -----------------------------------------------------------------------------
+# Helper to implement proxy/object synchronization
+# -----------------------------------------------------------------------------
+class ProxyObjectAdapter:
+    @staticmethod
+    def commit(proxy):
+        pass
+
+    @staticmethod
+    def reset(proxy):
+        pass
+
+    @staticmethod
+    def fetch(proxy):
+        pass
+
+    @staticmethod
+    def update(proxy, *property_names):
+        pass
+
+DEFAULT_PROXY_OBJECT_ADAPTER = ProxyObjectAdapter()
+
+
+# -----------------------------------------------------------------------------
 # Proxy
 # -----------------------------------------------------------------------------
 # A Proxy keep track of a set of a properties for an other object.
@@ -90,7 +115,7 @@ class Proxy:
         __object=None,
         _name=None,
         _tags=[],
-        _push_fn=None,
+        _object_adapter=DEFAULT_PROXY_OBJECT_ADAPTER,
         **kwargs,
     ):
         self._id = next(Proxy.__id_generator)
@@ -104,7 +129,7 @@ class Proxy:
         self._listeners = set()
         self._tags = set(_tags)
         self._tags.update(self.definition.get("_tags", []))
-        self._push_fn = _push_fn if _push_fn is not None else push
+        self._object_adapter = _object_adapter
 
         # Proxy can be fully virtual (:None)
         self._object = __object
@@ -223,6 +248,8 @@ class Proxy:
 
         if change_detected:
             self._proxy_manager.dirty_ids.add(self._id)
+            if self._object:
+                self._object_adapter.update(self, name)
 
         self._emit(
             "update",
@@ -251,7 +278,7 @@ class Proxy:
         if self._dirty_properties:
             properties_dirty = list(self._dirty_properties)
             if self._object:
-                self._push_fn(self)
+                self._object_adapter.commit(self)
 
             self._pushed_properties.update(self._properties)
             self._dirty_properties.clear()
@@ -267,11 +294,17 @@ class Proxy:
         """Undo any uncommited properties"""
         self._proxy_manager.dirty_ids.discard(self._id)
         if self._dirty_properties:
+            if self._object:
+                self._object_adapter.reset(self)
+
             properties_dirty = list(self._dirty_properties)
             self._dirty_properties.clear()
             self._properties.update(self._pushed_properties)
             self._emit("reset", properties_dirty=properties_dirty)
             return True
+
+    def fetch(self):
+        self._object_adapter.fetch(self)
 
     def on(self, fn):
         """
