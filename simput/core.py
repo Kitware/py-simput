@@ -248,8 +248,9 @@ class Proxy:
 
         if change_detected:
             self._proxy_manager.dirty_ids.add(self._id)
-            if self._object:
-                self._object_adapter.update(self, name)
+
+        if self._object:
+            self._object_adapter.update(self, name)
 
         self._emit(
             "update",
