@@ -1,3 +1,10 @@
+## [2.0.10](https://github.com/Kitware/py-simput/compare/v2.0.9...v2.0.10) (2022-03-11)
+
+
+### Bug Fixes
+
+* **change:** Always push unchecked props ([6e0d58e](https://github.com/Kitware/py-simput/commit/6e0d58e7789cf8b1827abe076b1b97812dd1880f))
+
 ## [2.0.9](https://github.com/Kitware/py-simput/compare/v2.0.8...v2.0.9) (2022-03-10)
 
 
