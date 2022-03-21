@@ -1,3 +1,10 @@
+## [2.0.11](https://github.com/Kitware/py-simput/compare/v2.0.10...v2.0.11) (2022-03-21)
+
+
+### Bug Fixes
+
+* **client/server:** Add reload/disable/resolver-attr ([f1d8977](https://github.com/Kitware/py-simput/commit/f1d8977a5d38332398669fc1cd86740eed6018da))
+
 ## [2.0.10](https://github.com/Kitware/py-simput/compare/v2.0.9...v2.0.10) (2022-03-11)
 
 
