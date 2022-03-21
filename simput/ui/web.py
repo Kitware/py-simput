@@ -33,6 +33,7 @@ class VuetifyResolver:
                 ctype = domain.get("type")
                 level = domain.get("level", 0)
                 widget = domain.get("widget", widget)
+                attributes.update(domain.get("ui_attributes", {}))
                 if (
                     ctype == "LabelList"
                     or ctype == "PropertyList"

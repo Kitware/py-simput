@@ -32,6 +32,7 @@
           :min="computedMin"
           :max="computedMax"
           :step="computedStep"
+          :disabled="!decorator.enable"
         />
         <div class="text-truncate text-right text-caption text--secondary mr-4" style="max-width: 60px;min-width: 60px;">{{ model }}</div>
       </v-row>
@@ -69,6 +70,7 @@
           :min="computedMin"
           :max="computedMax"
           :step="computedStep"
+          :disabled="!decorator.enable"
         />
         <div class="text-truncate text-right text-caption text--secondary" style="max-width: 60px;min-width: 60px;">{{ model[i - 1] }}</div>
         <v-btn
@@ -77,6 +79,7 @@
           icon
           x-small
           @click="deleteEntry(i - 1)"
+          :disabled="!decorator.enable"
         >
           <v-icon>mdi-minus-circle-outline</v-icon>
         </v-btn>

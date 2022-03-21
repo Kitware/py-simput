@@ -38,13 +38,26 @@ export default {
         this.ui = this.getSimput().getUI(this.type);
       }
     };
+    this.onReload = (name) => {
+      if (name === 'data') {
+        this.data = this.getSimput().getData(this.itemId, true);
+      }
+      if (name === 'ui') {
+        this.ui = this.getSimput().getUI(this.itemId, true);
+      }
+      if (name === 'domain') {
+        this.domains = this.getSimput().getDomains(this.itemId, true);
+      }
+    };
     this.simputChannel.$on('connect', this.onConnect);
     this.simputChannel.$on('change', this.onChange);
+    this.simputChannel.$on('reload', this.onReload);
     this.update();
   },
   beforeUnmount() {
     this.simputChannel.$off('connect', this.onConnect);
     this.simputChannel.$off('change', this.onChange);
+    this.simputChannel.$off('reload', this.onReload);
   },
   watch: {
     itemId() {

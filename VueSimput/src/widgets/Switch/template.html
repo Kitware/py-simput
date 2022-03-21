@@ -8,6 +8,7 @@
       @change="validate"
       dense
       hide-details
+      :disabled="!decorator.enable"
     />
     <v-spacer />
     <v-btn v-if="help" icon x-small @click="showHelp = !showHelp">

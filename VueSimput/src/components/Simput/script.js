@@ -39,6 +39,9 @@ export default {
       this.manager = getSimputManager(this.managerId, this.namespace, this.wsClient);
       this.manager.connectBus(this);
     },
+    reload(name) {
+      this.manager.notify('reload', name);
+    },
   },
   provide() {
     return {

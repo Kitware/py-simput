@@ -35,6 +35,8 @@
         @keydown.enter="validate()"
         :persistent-hint="showHelp"
         :hide-details="!showHelp || !help"
+
+        :disabled="!decorator.enable"
       />
     </v-col>
     <v-col
@@ -56,6 +58,8 @@
           @blur="validate(i)"
           @keydown.enter="validate(i)"
           hide-details
+
+          :disabled="!decorator.enable"
         />
         <v-btn
           v-if="computedSizeControl"
@@ -63,6 +67,7 @@
           icon
           x-small
           @click="deleteEntry(i - 1)"
+          :disabled="!decorator.enable"
         >
           <v-icon>mdi-minus-circle-outline</v-icon>
         </v-btn>
