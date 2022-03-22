@@ -1,3 +1,10 @@
+## [2.0.12](https://github.com/Kitware/py-simput/compare/v2.0.11...v2.0.12) (2022-03-22)
+
+
+### Bug Fixes
+
+* **slider:** Allow Range/range domain name ([7d89aed](https://github.com/Kitware/py-simput/commit/7d89aed0f4ef23a8cab65fa9adee1eb3f6d2c1ef))
+
 ## [2.0.11](https://github.com/Kitware/py-simput/compare/v2.0.10...v2.0.11) (2022-03-21)
 
 
