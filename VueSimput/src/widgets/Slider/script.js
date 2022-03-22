@@ -96,7 +96,8 @@ export default {
         return this.min;
       }
 
-      const dataRange = this.domains()?.[this.name]?.Range?.available;
+      const dataRange = this.domains()?.[this.name]?.Range?.available
+        || this.domains()?.[this.name]?.range?.available;
       if (dataRange) {
         return dataRange[0];
       }
@@ -107,7 +108,8 @@ export default {
         return this.max;
       }
 
-      const dataRange = this.domains()?.[this.name]?.Range?.available;
+      const dataRange = this.domains()?.[this.name]?.Range?.available
+        || this.domains()?.[this.name]?.range?.available;
       if (dataRange) {
         return dataRange[1];
       }

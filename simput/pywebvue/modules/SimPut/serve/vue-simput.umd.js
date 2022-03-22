@@ -5236,13 +5236,13 @@ var templatevue_type_template_id_4a99b278_staticRenderFns = []
       return ((_TYPES$this$type2 = TYPES[this.type]) === null || _TYPES$this$type2 === void 0 ? void 0 : _TYPES$this$type2.convert) || FALLBACK_CONVERT;
     },
     computedMin: function computedMin() {
-      var _this$domains, _this$domains$this$na7, _this$domains$this$na8;
+      var _this$domains, _this$domains$this$na7, _this$domains$this$na8, _this$domains2, _this$domains2$this$n, _this$domains2$this$n2;
 
       if (this.min != null) {
         return this.min;
       }
 
-      var dataRange = (_this$domains = this.domains()) === null || _this$domains === void 0 ? void 0 : (_this$domains$this$na7 = _this$domains[this.name]) === null || _this$domains$this$na7 === void 0 ? void 0 : (_this$domains$this$na8 = _this$domains$this$na7.Range) === null || _this$domains$this$na8 === void 0 ? void 0 : _this$domains$this$na8.available;
+      var dataRange = ((_this$domains = this.domains()) === null || _this$domains === void 0 ? void 0 : (_this$domains$this$na7 = _this$domains[this.name]) === null || _this$domains$this$na7 === void 0 ? void 0 : (_this$domains$this$na8 = _this$domains$this$na7.Range) === null || _this$domains$this$na8 === void 0 ? void 0 : _this$domains$this$na8.available) || ((_this$domains2 = this.domains()) === null || _this$domains2 === void 0 ? void 0 : (_this$domains2$this$n = _this$domains2[this.name]) === null || _this$domains2$this$n === void 0 ? void 0 : (_this$domains2$this$n2 = _this$domains2$this$n.range) === null || _this$domains2$this$n2 === void 0 ? void 0 : _this$domains2$this$n2.available);
 
       if (dataRange) {
         return dataRange[0];
@@ -5251,13 +5251,13 @@ var templatevue_type_template_id_4a99b278_staticRenderFns = []
       return 0;
     },
     computedMax: function computedMax() {
-      var _this$domains2, _this$domains2$this$n, _this$domains2$this$n2;
+      var _this$domains3, _this$domains3$this$n, _this$domains3$this$n2, _this$domains4, _this$domains4$this$n, _this$domains4$this$n2;
 
       if (this.max != null) {
         return this.max;
       }
 
-      var dataRange = (_this$domains2 = this.domains()) === null || _this$domains2 === void 0 ? void 0 : (_this$domains2$this$n = _this$domains2[this.name]) === null || _this$domains2$this$n === void 0 ? void 0 : (_this$domains2$this$n2 = _this$domains2$this$n.Range) === null || _this$domains2$this$n2 === void 0 ? void 0 : _this$domains2$this$n2.available;
+      var dataRange = ((_this$domains3 = this.domains()) === null || _this$domains3 === void 0 ? void 0 : (_this$domains3$this$n = _this$domains3[this.name]) === null || _this$domains3$this$n === void 0 ? void 0 : (_this$domains3$this$n2 = _this$domains3$this$n.Range) === null || _this$domains3$this$n2 === void 0 ? void 0 : _this$domains3$this$n2.available) || ((_this$domains4 = this.domains()) === null || _this$domains4 === void 0 ? void 0 : (_this$domains4$this$n = _this$domains4[this.name]) === null || _this$domains4$this$n === void 0 ? void 0 : (_this$domains4$this$n2 = _this$domains4$this$n.range) === null || _this$domains4$this$n2 === void 0 ? void 0 : _this$domains4$this$n2.available);
 
       if (dataRange) {
         return dataRange[1];
