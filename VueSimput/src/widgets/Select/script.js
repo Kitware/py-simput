@@ -66,7 +66,7 @@ export default {
     this.simputChannel.$on('templateTS', this.onUpdateUI);
     this.onUpdateUI();
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.simputChannel.$off('templateTS', this.onUpdateUI);
   },
   data() {

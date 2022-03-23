@@ -96,13 +96,14 @@ class VuetifyResolver:
 
         # Add name, label, help, size
         out_elem = ET.Element(widget)
+        out_elem.set(":mtime", "data.mtime")
+
         if key is not None and key in self._model:
             size = self._model.get(key).get("size", 1)
             ptype = self._model.get(key).get("type", "string")
             out_elem.set("name", key)
             out_elem.set("size", f"{size}")
             out_elem.set("type", ptype)
-            out_elem.set(":mtime", "data.mtime")
             out_elem.set(":initial", f"data.original['{key}']")
         if elem_label:
             out_elem.set("label", elem_label)

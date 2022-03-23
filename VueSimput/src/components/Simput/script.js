@@ -14,7 +14,7 @@ export default {
   created() {
     this.updateManager();
   },
-  beforeUnmount() {
+  beforeDestroy() {
     if (this.manager) {
       this.manager.disconnectBus(this);
     }

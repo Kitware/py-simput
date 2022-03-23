@@ -6,6 +6,9 @@ export default {
     name: {
       type: String,
     },
+    mtime: {
+      type: Number,
+    },
   },
   components: {
     SimputInput,

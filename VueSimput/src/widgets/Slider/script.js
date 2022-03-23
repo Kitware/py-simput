@@ -32,10 +32,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    numberOfSteps: {
-      type: Number,
-      default: 255,
-    },
     min: {
       type: Number,
     },
@@ -117,11 +113,14 @@ export default {
       return 100;
     },
     computedStep() {
-      if (this.type.indexOf('int') !== -1) {
+      if (this.step) {
+        return this.step;
+      }
+
+      if (this.type.includes('int')) {
         return 1;
       }
-      const range = this.computedMax - this.computedMin;
-      return range / this.numberOfSteps;
+      return 0.01;
     },
     hints() {
       /* eslint-disable no-unused-expressions */

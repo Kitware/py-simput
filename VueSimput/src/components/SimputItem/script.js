@@ -54,14 +54,28 @@ export default {
     this.simputChannel.$on('reload', this.onReload);
     this.update();
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.simputChannel.$off('connect', this.onConnect);
     this.simputChannel.$off('change', this.onChange);
     this.simputChannel.$off('reload', this.onReload);
   },
   watch: {
     itemId() {
+      // Clear previous data if its a different proxy
+      this.data = null;
+      this.ui = null;
+
+      // Update data to match given itemId
       this.update();
+    },
+    ui() {
+      console.log(`~~~~ UI(${this.itemId})`);
+    },
+    noUi() {
+      console.log(`~~~~ noUI(${this.itemId})`);
+    },
+    available() {
+      console.log(`~~~~ available(${this.itemId})`);
     },
   },
   computed: {
@@ -83,14 +97,15 @@ export default {
   },
   methods: {
     update() {
-      this.data = null;
-      this.ui = null;
       if (this.itemId) {
         this.data = this.getSimput().getData(this.itemId);
         this.domains = this.getSimput().getDomains(this.itemId);
         if (this.type) {
           this.ui = this.getSimput().getUI(this.type);
         }
+      } else {
+        this.data = null;
+        this.ui = null;
       }
     },
     dirty(name) {
