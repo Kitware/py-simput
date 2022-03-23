@@ -1,3 +1,10 @@
+## [2.0.13](https://github.com/Kitware/py-simput/compare/v2.0.12...v2.0.13) (2022-03-23)
+
+
+### Bug Fixes
+
+* **vue:** lifecycle methods + refresh ([34e2d08](https://github.com/Kitware/py-simput/commit/34e2d086aa557071335138fe968f7fd8e3171ec7))
+
 ## [2.0.12](https://github.com/Kitware/py-simput/compare/v2.0.11...v2.0.12) (2022-03-22)
 
 
