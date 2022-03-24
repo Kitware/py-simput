@@ -17,24 +17,34 @@ export class DataManager {
           id, data, domains, type, ui,
         } = event;
         if (data) {
-          console.log(`data(${id})`);
           delete this.pending[id];
           const before = JSON.stringify(this.cache.data[id]?.properties);
           const after = JSON.stringify(data.properties);
           if (before !== after) {
             this.cache.data[id] = data;
+            console.log(`data(${id}) == CHANGE`);
+            console.group('before');
+            console.log(before);
+            console.groupEnd();
+            console.group('after');
+            console.log(after);
+            console.groupEnd();
+          } else {
+            console.log(`data(${id}) == SAME`);
           }
           this.cache.data[id].mtime = data.mtime;
           this.cache.data[id].original = JSON.parse(after);
         }
         if (domains) {
-          console.log(`domains(${id})`);
           delete this.pending[`d-${id}`];
           const before = JSON.stringify(this.cache.domains[id]);
           const after = JSON.stringify(domains);
           // console.log(JSON.stringify(domains, null, 2));
           if (before !== after) {
             this.cache.domains[id] = domains;
+            console.log(`domains(${id}) == CHANGE`);
+          } else {
+            console.log(`domains(${id}) == SAME`);
           }
         }
         if (ui) {
@@ -73,12 +83,24 @@ export class DataManager {
         }
       });
 
-    this.onDirty = ({ id, name }) => {
-      const value = this.cache.data[id].properties[name];
-      console.log(' > dirty', id, name);
+    this.onDirty = ({ id, name, names }) => {
+      const dirtySet = [];
+      if (name) {
+        const value = this.cache.data[id].properties[name];
+        dirtySet.push({ id, name, value });
+      }
+      if (names) {
+        for (let i = 0; i < names.length; i++) {
+          const n = names[i];
+          const value = this.cache.data[id].properties[n];
+          dirtySet.push({ id, name: n, value });
+        }
+      }
+
+      console.log(' > dirty', dirtySet);
       this.wsClient
         .getRemote()
-        .PyWebVue.trigger(`${this.namespace}Update`, [[{ id, name, value }]]);
+        .PyWebVue.trigger(`${this.namespace}Update`, [dirtySet]);
     };
   }
 

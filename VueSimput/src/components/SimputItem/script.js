@@ -111,12 +111,16 @@ export default {
     dirty(name) {
       this.simputChannel.$emit('dirty', { id: this.data.id, name });
     },
+    dirtyMany(names) {
+      this.simputChannel.$emit('dirty', { id: this.data.id, names });
+    },
   },
   inject: ['simputChannel', 'getSimput'],
   provide() {
     return {
       simputChannel: this.simputChannel,
       dirty: (name) => this.dirty(name),
+      dirtyMany: (...names) => this.dirtyMany(names),
       data: () => this.data,
       domains: () => this.domains,
       properties: () => this.properties,

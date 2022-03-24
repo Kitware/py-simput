@@ -11,8 +11,8 @@ serve_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "serve"))
 # -----------------------------------------------------------------------------
 
 serve = {"__simput": serve_path}
-scripts = ["/__simput/vue-simput.umd.js"]
-# scripts = ["/__simput/vue-simput.umd.min.js"]
+# scripts = ["/__simput/vue-simput.umd.js"]
+scripts = ["/__simput/vue-simput.umd.min.js"]
 vue_use = ["VueSimput"]
 
 # -----------------------------------------------------------------------------
