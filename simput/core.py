@@ -70,6 +70,7 @@ class ProxyObjectAdapter:
     def update(proxy, *property_names):
         pass
 
+
 DEFAULT_PROXY_OBJECT_ADAPTER = ProxyObjectAdapter()
 
 

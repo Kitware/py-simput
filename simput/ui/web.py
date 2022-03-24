@@ -16,6 +16,21 @@ WIDGET_MAP = {
     "textarea": "sw-text-area",
 }
 
+WIDGET_KNOWN = {
+    "div",
+    "v-row",
+    "v-col",
+    "v-spacer",
+    "v-divider",
+    "sw-show",
+    "sw-hide",
+    "sw-text",
+    "sw-text-field",
+    "sw-text-area",
+    "sw-slider",
+    "sw-group",
+}
+
 
 class VuetifyResolver:
     def __init__(self):
@@ -74,7 +89,8 @@ class VuetifyResolver:
         elif elem.tag == "proxy":
             return "sw-proxy", attributes
 
-        print(f"No mapping for {elem.tag}")
+        if elem.tag not in WIDGET_KNOWN:
+            print(f"Unknown widget element {elem.tag}")
         return elem.tag, attributes
 
     def process_node(self, in_elem):

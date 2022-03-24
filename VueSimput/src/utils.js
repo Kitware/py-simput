@@ -23,12 +23,12 @@ export class DataManager {
           if (before !== after) {
             this.cache.data[id] = data;
             console.log(`data(${id}) == CHANGE`);
-            console.group('before');
-            console.log(before);
-            console.groupEnd();
-            console.group('after');
-            console.log(after);
-            console.groupEnd();
+            // console.group('before');
+            // console.log(before);
+            // console.groupEnd();
+            // console.group('after');
+            // console.log(after);
+            // console.groupEnd();
           } else {
             console.log(`data(${id}) == SAME`);
           }

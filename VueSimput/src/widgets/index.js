@@ -7,6 +7,7 @@ import SwProxy from './Proxy';
 import SwShow from './Show';
 import SwHide from './Hide';
 import SwText from './Text';
+import SwGroup from './Group';
 
 export default {
   SwSelect,
@@ -18,4 +19,5 @@ export default {
   SwShow,
   SwHide,
   SwText,
+  SwGroup,
 };
