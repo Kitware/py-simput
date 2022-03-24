@@ -1,3 +1,10 @@
+## [2.0.14](https://github.com/Kitware/py-simput/compare/v2.0.13...v2.0.14) (2022-03-24)
+
+
+### Bug Fixes
+
+* **dirtyMany:** Add helper to dirty many in one call ([24b10af](https://github.com/Kitware/py-simput/commit/24b10af4adb3562819f4e712bd57604b1668954a))
+
 ## [2.0.13](https://github.com/Kitware/py-simput/compare/v2.0.12...v2.0.13) (2022-03-23)
 
 
