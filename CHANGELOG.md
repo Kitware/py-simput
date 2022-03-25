@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/Kitware/py-simput/compare/v2.0.14...v2.1.0) (2022-03-25)
+
+
+### Features
+
+* **Group:** Add group widget ([d55d51d](https://github.com/Kitware/py-simput/commit/d55d51d8f7d7934c49d32f70569d847418078d8e))
+
 ## [2.0.14](https://github.com/Kitware/py-simput/compare/v2.0.13...v2.0.14) (2022-03-24)
 
 
