@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/Kitware/py-simput/compare/v2.1.0...v2.1.1) (2022-03-25)
+
+
+### Bug Fixes
+
+* **logging:** Add logging to help debug client/server state ([dfb8955](https://github.com/Kitware/py-simput/commit/dfb8955ec84c81b0c8f8e5ed581f28ad3f1b35e0))
+
 # [2.1.0](https://github.com/Kitware/py-simput/compare/v2.0.14...v2.1.0) (2022-03-25)
 
 
