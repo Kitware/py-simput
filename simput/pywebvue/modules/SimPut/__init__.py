@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 
 from wslink import register as exportRpc
 from wslink.websocket import LinkProtocol
@@ -43,13 +44,14 @@ def get_domains_manager(_id):
 
 
 class SimputHelper:
-    def __init__(self, app, ui_manager, domains_manager=None, namespace="simput"):
+    def __init__(self, app, ui_manager, domains_manager=None, namespace="simput", log_dir=None):
         self._app = app
         self._ui_manager = ui_manager
         self._domains_manager = domains_manager
         self._namespace = namespace
         self._pending_changeset = {}
         self._auto_update = False
+        self._log_directory = log_dir if log_dir else os.environ.get("SIMPUT_LOG_DIR")
 
         # init keys
         self.id_key = f"{namespace}Id"
@@ -80,9 +82,22 @@ class SimputHelper:
         self._ui_manager.on(self._ui_change)
         self._ui_manager.proxymanager.on(self._data_change)
 
+        # Debug
+        if self._log_directory:
+            os.makedirs(self._log_directory, exist_ok = True)
+
+
     def __del__(self):
         self._ui_manager.off(self._ui_change)
         self._ui_manager.proxymanager.off(self._data_change)
+
+
+    def _log(self, id, name, content):
+        if self._log_directory:
+            full_path = Path(self._log_directory) / f"{id}_{name}.json"
+            with open(full_path, "w") as file:
+                file.write(json.dumps(content, indent=2))
+
 
     @property
     def changeset(self):
@@ -155,6 +170,7 @@ class SimputHelper:
         self._app.protocol_call("simput.push.event", topic, **kwargs)
 
     def update(self, change_set):
+        id_map = {}
         for change in change_set:
             _id = change.get("id")
             _name = change.get("name")
@@ -165,6 +181,15 @@ class SimputHelper:
             _obj_change = self._pending_changeset[_id]
 
             _obj_change[_name] = _value
+
+            # debug
+            if self._log_directory:
+                id_map.setdefault(_id, {})
+                id_map[_id][_name] = _value
+
+        if self._log_directory:
+            for _id in id_map:
+                self._log(_id, "change", id_map[_id])
 
         self._app.set(self.changecount_key, len(self.changeset))
         self._app.set(self.changeset_key, self.changeset)
@@ -189,20 +214,24 @@ class SimputHelper:
             # Push any changed state in domains
             for _id in all_ids:
                 self._domains_manager.clean(_id)
+                _domain = self._domains_manager.get(_id).state
+                self._log(_id, "domain", _domain)
                 self._app.protocol_call(
                     "simput.message.push",
                     {
                         "id": _id,
-                        "domains": self._domains_manager.get(_id).state,
+                        "domains": _domain,
                     },
                 )
 
             for _id in data_ids:
+                _data = self._ui_manager.data(_id)
+                self._log(_id, "data", _data)
                 self._app.protocol_call(
                     "simput.message.push",
                     {
                         "id": _id,
-                        "data": self._ui_manager.data(_id),
+                        "data": _data,
                     },
                 )
 
@@ -239,9 +268,20 @@ class SimputHelper:
 
 
 class SimputProtocol(LinkProtocol):
-    def __init__(self):
+    def __init__(self, log_dir=None):
         super().__init__()
+        self._log_directory = log_dir if log_dir else os.environ.get("SIMPUT_LOG_DIR")
         self.reset_cache()
+
+        if self._log_directory:
+            os.makedirs(self._log_directory, exist_ok = True)
+
+    def _log(self, id, name, content):
+        if self._log_directory:
+            full_path = Path(self._log_directory) / f"{id}_{name}.json"
+            with open(full_path, "w") as file:
+                file.write(json.dumps(content, indent=2))
+
 
     @exportRpc("simput.reset.cache")
     def reset_cache(self):
@@ -252,7 +292,9 @@ class SimputProtocol(LinkProtocol):
         uim = get_ui_manager(manager_id)
         message = {"id": id, "type": type}
         if id is not None:
-            message.update({"data": uim.data(id)})
+            _data = uim.data(id)
+            self._log(id, "data", _data)
+            message.update({"data": _data})
 
         if type is not None:
             message.update({"ui": uim.ui(type)})
@@ -262,7 +304,9 @@ class SimputProtocol(LinkProtocol):
     @exportRpc("simput.data.get")
     def get_data(self, manager_id, id):
         uim = get_ui_manager(manager_id)
-        msg = {"id": id, "data": uim.data(id)}
+        _data = uim.data(id)
+        self._log(id, "data", _data)
+        msg = {"id": id, "data": _data}
         self.send_message(msg)
         return msg
 
@@ -280,7 +324,9 @@ class SimputProtocol(LinkProtocol):
         domains_manager = get_domains_manager(manager_id)
         if domains_manager:
             domains_manager.clean(id)
-            msg["domains"] = domains_manager.get(id).state
+            _domain = domains_manager.get(id).state
+            self._log(id, "domain", _domain)
+            msg["domains"] = _domain
 
         self.send_message(msg)
         return msg
