@@ -263,6 +263,12 @@ class SimputHelper:
     def _data_change(self, action, **kwargs):
         self.emit("data-change", action=action, **kwargs)
 
+        if action == "commit":
+            _ids = kwargs.get("ids", [])
+            for _id in _ids:
+                self._pending_changeset.pop(_id)
+            self._app.set(self.changecount_key, len(self.changeset))
+            self._app.set(self.changeset_key, self.changeset)
 
 # -----------------------------------------------------------------------------
 

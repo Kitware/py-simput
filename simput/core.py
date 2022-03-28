@@ -947,13 +947,21 @@ class ProxyManager:
         """
         self._life_cycle("proxy_update_before", change_set=change_set)
         dirty_ids = set()
+        dirty_proxies_to_commit = set()
         for change in change_set:
             _id = change["id"]
             _name = change["name"]
             _value = change["value"]
             dirty_ids.add(_id)
             proxy: Proxy = self.get(_id)
+            if "auto_commit" in proxy.tags:
+                dirty_proxies_to_commit.add(proxy)
             proxy.set_property(_name, _value)
+
+        # commit changes for proxy tagged as auto_commit
+        for proxy in dirty_proxies_to_commit:
+            proxy.commit()
+            self._emit("commit", ids=[proxy.id])
 
         self._life_cycle(
             "proxy_update_after", change_set=change_set, dirty_ids=dirty_ids

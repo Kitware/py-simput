@@ -89,7 +89,7 @@ class VuetifyResolver:
         elif elem.tag == "proxy":
             return "sw-proxy", attributes
 
-        if elem.tag not in WIDGET_KNOWN:
+        if not(elem.tag in WIDGET_KNOWN or elem.tag.startswith("sw-")):
             print(f"Unknown widget element {elem.tag}")
         return elem.tag, attributes
 
