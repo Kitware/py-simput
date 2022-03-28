@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/Kitware/py-simput/compare/v2.1.1...v2.1.2) (2022-03-28)
+
+
+### Bug Fixes
+
+* **auto_commit:** Handle proxy with auto_commit tag ([9181ed4](https://github.com/Kitware/py-simput/commit/9181ed43ad00df275e751f5c8885bce3a0041943))
+
 ## [2.1.1](https://github.com/Kitware/py-simput/compare/v2.1.0...v2.1.1) (2022-03-25)
 
 
