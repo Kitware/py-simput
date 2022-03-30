@@ -1,3 +1,10 @@
+## [2.1.3](https://github.com/Kitware/py-simput/compare/v2.1.2...v2.1.3) (2022-03-30)
+
+
+### Bug Fixes
+
+* **proxy/delete:** Properly handle proxy removal ([41d556d](https://github.com/Kitware/py-simput/commit/41d556dda65ef14d0ef220b69b85256c711a5d19))
+
 ## [2.1.2](https://github.com/Kitware/py-simput/compare/v2.1.1...v2.1.2) (2022-03-28)
 
 
