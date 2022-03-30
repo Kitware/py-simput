@@ -70,6 +70,10 @@ class ProxyObjectAdapter:
     def update(proxy, *property_names):
         pass
 
+    @staticmethod
+    def before_delete(proxy):
+        pass
+
 
 DEFAULT_PROXY_OBJECT_ADAPTER = ProxyObjectAdapter()
 
@@ -159,6 +163,12 @@ class Proxy:
                 self.set_property(_prop_name, _init_def)
             else:
                 self.set_property(_prop_name, None)
+
+    def __del__(self):
+        if self._object_adapter:
+            self._object_adapter.before_delete(self)
+        print(f"SIMPUT: Proxy deleted {self.id}::{self.type}")
+
 
     @property
     def definition(self):
@@ -456,6 +466,9 @@ class PropertyDomain:
         self._message = kwargs.get("message", str(__class__))
         self._should_compute_value = "initial" in kwargs
 
+    # def __del__(self):
+    #     print(f"SIMPUT: delete PropertyDomain {self._proxy.id}::{self._proxy.type} ({self._property_name})")
+
     def enable_set_value(self):
         """Reset domain set so it can re-compute a default value"""
         self._should_compute_value = True
@@ -566,8 +579,12 @@ class ProxyDomain:
                 else:
                     print(f"Could not find domain of type: {_type}")
 
-    def __del__(self):
+    # def __del__(self):
+    #     print(f"SIMPUT: delete ProxyDomain {self._proxy.id}::{self._proxy.type}")
+
+    def detatch(self):
         self._proxy.off(self._on_proxy_change)
+        self._proxy = None
 
     def _on_proxy_change(
         self, topic, modified=False, properties_dirty=[], properties_change=[], **kwargs
@@ -906,6 +923,7 @@ class ProxyManager:
         # Delete ourself
         proxy_to_delete: Proxy = self._id_map[proxy_id]
         del self._id_map[proxy_id]
+
         for tag in proxy_to_delete.tags:
             self._tag_map.get(tag).discard(proxy_id)
 
@@ -1296,6 +1314,7 @@ class ProxyDomainManager(ProxyManagerLifeCycleListener):
             # print("domain::apply(create)", proxy.id)
 
     def proxy_delete_before(self, proxy_id, trigger_modified, **kwargs):
+        self._id_map[proxy_id].detatch()
         del self._id_map[proxy_id]
 
     def apply_all(self):
