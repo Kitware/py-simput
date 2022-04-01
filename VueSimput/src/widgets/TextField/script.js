@@ -1,4 +1,4 @@
-import { TYPES, FALLBACK_CONVERT } from '../../types';
+import { COMPUTED } from '../../utils';
 
 // Layouts: horizontal, vertical, l2, l3, l4
 export default {
@@ -49,9 +49,24 @@ export default {
     return {
       showHelp: false,
       dynamicSize: this.size,
+      query: '',
     };
   },
+  created() {
+    this.onQuery = (query) => {
+      this.query = query;
+    };
+    this.simputChannel.$on('query', this.onQuery);
+  },
+  beforeDestroy() {
+    this.simputChannel.$off('query', this.onQuery);
+  },
   computed: {
+    ...COMPUTED.query,
+    ...COMPUTED.decorator,
+    ...COMPUTED.convert,
+    ...COMPUTED.hints,
+    ...COMPUTED.rule,
     model: {
       get() {
         /* eslint-disable no-unused-expressions */
@@ -69,11 +84,6 @@ export default {
         this.properties()[this.name] = v;
       },
     },
-    decorator() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      return this.domains()[this.name]?.decorator?.available || { show: true, enable: true };
-    },
     computedLayout() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
@@ -89,17 +99,6 @@ export default {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
       return this.sizeControl || this.domains()[this.name]?.UI?.sizeControl;
-    },
-    rule() {
-      return TYPES[this.type]?.rule || (() => true);
-    },
-    convert() {
-      return TYPES[this.type]?.convert || FALLBACK_CONVERT;
-    },
-    hints() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      return this.domains()?.[this.name]?.hints || [];
     },
   },
   methods: {
@@ -175,7 +174,7 @@ export default {
       return {};
     },
     color(component = 0) {
-      if (component && this.model?.[component - 1] !== (this.initial?.[component - 1])) {
+      if (component && this.model?.[component - 1] !== this.initial?.[component - 1]) {
         return this.editColor;
       }
       if (!component && this.model !== this.initial) {
@@ -223,5 +222,5 @@ export default {
       }
     },
   },
-  inject: ['data', 'properties', 'domains', 'dirty', 'getSimput'],
+  inject: ['simputChannel', 'data', 'properties', 'domains', 'dirty', 'getSimput'],
 };

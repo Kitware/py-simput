@@ -1,4 +1,4 @@
-import { TYPES, FALLBACK_CONVERT } from '../../types';
+import { COMPUTED } from '../../utils';
 
 export default {
   name: 'swSwitch',
@@ -27,9 +27,22 @@ export default {
   data() {
     return {
       showHelp: false,
+      query: '',
     };
   },
+  created() {
+    this.onQuery = (query) => {
+      this.query = query;
+    };
+    this.simputChannel.$on('query', this.onQuery);
+  },
+  beforeDestroy() {
+    this.simputChannel.$off('query', this.onQuery);
+  },
   computed: {
+    ...COMPUTED.query,
+    ...COMPUTED.decorator,
+    ...COMPUTED.convert,
     model: {
       get() {
         /* eslint-disable no-unused-expressions */
@@ -40,14 +53,6 @@ export default {
         this.properties()[this.name] = v;
       },
     },
-    decorator() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      return this.domains()[this.name]?.decorator?.available || { show: true, enable: true };
-    },
-    convert() {
-      return TYPES[this.type]?.convert || FALLBACK_CONVERT;
-    },
   },
   methods: {
     validate() {
@@ -55,5 +60,5 @@ export default {
       this.dirty(this.name);
     },
   },
-  inject: ['data', 'properties', 'domains', 'dirty'],
+  inject: ['simputChannel', 'data', 'properties', 'domains', 'dirty'],
 };

@@ -1,4 +1,5 @@
 import SimputInput from '../../components/SimputItem';
+import { COMPUTED } from '../../utils';
 
 export default {
   name: 'swProxy',
@@ -14,11 +15,7 @@ export default {
     SimputInput,
   },
   computed: {
-    decorator() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      return this.domains()[this.name]?.decorator?.available || { show: true, enable: true };
-    },
+    ...COMPUTED.decorator,
     itemId() {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh

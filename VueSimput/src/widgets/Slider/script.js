@@ -1,4 +1,4 @@
-import { TYPES, FALLBACK_CONVERT } from '../../types';
+import { COMPUTED } from '../../utils';
 
 // Layouts: horizontal, vertical, l2, l3, l4
 export default {
@@ -46,9 +46,24 @@ export default {
     return {
       showHelp: false,
       dynamicSize: this.size,
+      query: '',
     };
   },
+  created() {
+    this.onQuery = (query) => {
+      this.query = query;
+    };
+    this.simputChannel.$on('query', this.onQuery);
+  },
+  beforeDestroy() {
+    this.simputChannel.$off('query', this.onQuery);
+  },
   computed: {
+    ...COMPUTED.query,
+    ...COMPUTED.decorator,
+    ...COMPUTED.convert,
+    ...COMPUTED.rule,
+    ...COMPUTED.hints,
     model: {
       get() {
         /* eslint-disable no-unused-expressions */
@@ -59,11 +74,6 @@ export default {
       set(v) {
         this.properties()[this.name] = v;
       },
-    },
-    decorator() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      return this.domains()[this.name]?.decorator?.available || { show: true, enable: true };
     },
     computedLayout() {
       /* eslint-disable no-unused-expressions */
@@ -80,12 +90,6 @@ export default {
       /* eslint-disable no-unused-expressions */
       this.mtime; // force refresh
       return this.sizeControl || this.domains()[this.name]?.UI?.sizeControl;
-    },
-    rule() {
-      return TYPES[this.type]?.rule || true;
-    },
-    convert() {
-      return TYPES[this.type]?.convert || FALLBACK_CONVERT;
     },
     computedMin() {
       if (this.min != null) {
@@ -121,11 +125,6 @@ export default {
         return 1;
       }
       return 0.01;
-    },
-    hints() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      return this.domains()[this.name].hints || [];
     },
   },
   methods: {
@@ -217,5 +216,5 @@ export default {
       this.dirty(this.name);
     },
   },
-  inject: ['data', 'properties', 'domains', 'dirty'],
+  inject: ['simputChannel', 'data', 'properties', 'domains', 'dirty'],
 };

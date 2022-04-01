@@ -1,4 +1,4 @@
-import { getSimputManager } from '../../utils';
+import { getSimputManager, debounce } from '../../utils';
 
 export default {
   name: 'Simput',
@@ -10,9 +10,17 @@ export default {
       type: String,
       default: 'simput',
     },
+    query: {
+      type: String,
+      default: '',
+    },
   },
   created() {
     this.updateManager();
+    this.pushQuery = debounce(
+      () => this.$emit('query', this.query?.toLowerCase() || ''),
+      250,
+    );
   },
   beforeDestroy() {
     if (this.manager) {
@@ -23,6 +31,9 @@ export default {
   watch: {
     namespace() {
       this.updateManager();
+    },
+    query() {
+      this.pushQuery();
     },
   },
   methods: {

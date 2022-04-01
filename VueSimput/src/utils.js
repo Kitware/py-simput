@@ -1,4 +1,75 @@
+import { TYPES, FALLBACK_CONVERT } from './types';
+
 export const MANAGERS = {};
+
+export const COMPUTED = {
+  query: {
+    textToQuery() {
+      // ${this.help?.toLowerCase() || ''}
+      return `${this.name?.toLowerCase() || ''} ${this.label?.toLowerCase() || ''}`;
+    },
+    shouldShow() {
+      if (this.query && this.decorator.query) {
+        const tokens = this.query.split(' ');
+        if (tokens.length > 1) {
+          for (let i = 0; i < tokens.length; i++) {
+            const t = tokens[i].trim();
+            if (t && this.textToQuery.includes(t)) {
+              return true;
+            }
+          }
+          return false;
+        }
+        return this.textToQuery.includes(this.query);
+      }
+      return this.decorator.show;
+    },
+  },
+  decorator: {
+    decorator() {
+      /* eslint-disable no-unused-expressions */
+      this.mtime; // force refresh
+      return (
+        this.domains()[this.name]?.decorator?.available
+          || { show: true, enable: true, query: true }
+      );
+    },
+  },
+  convert: {
+    convert() {
+      return TYPES[this.type]?.convert || FALLBACK_CONVERT;
+    },
+  },
+  hints: {
+    hints() {
+      /* eslint-disable no-unused-expressions */
+      this.mtime; // force refresh
+      return this.domains()?.[this.name]?.hints || [];
+    },
+  },
+  rule: {
+    rule() {
+      return TYPES[this.type]?.rule || (() => true);
+    },
+  },
+};
+
+export function debounce(func, wait = 100) {
+  let timeout;
+  const debounced = (...args) => {
+    const context = this;
+    const later = () => {
+      timeout = null;
+      func.apply(context, args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+
+  debounced.cancel = () => clearTimeout(timeout);
+
+  return debounced;
+}
 
 export class DataManager {
   constructor(namespace, wsClient) {

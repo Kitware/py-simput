@@ -1,4 +1,4 @@
-<v-col fluid style="position: relative" v-show="decorator.show">
+<v-col fluid style="position: relative" v-show="shouldShow">
   <div style="position: absolute; right: 10px; top: -1px; z-index: 1;">
     <v-btn v-if="allowRefresh" icon x-small @click="refresh">
       <v-icon small>mdi-sync</v-icon>

@@ -1,3 +1,5 @@
+import { COMPUTED } from '../../utils';
+
 export default {
   name: 'swGroup',
   props: {
@@ -21,25 +23,19 @@ export default {
     this.mounted = true;
   },
   computed: {
-    decorator() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      if (this.name) {
-        return this.domains()[this.name]?.decorator?.available;
-      }
-      return null;
-    },
+    ...COMPUTED.decorator,
     visible() {
       this.mtime; // eslint-disable-line
       this.mounted; // eslint-disable-line
 
-      if (this.decorator && !this.decorator.show) {
+      if (this.decorator && !this.decorator.show && !this.decorator.query) {
         return false;
       }
 
       let visibleCount = 0;
       this.$slots.default.forEach((vNode) => {
-        const { show } = vNode.componentInstance?.decorator || { show: false };
+        const show = vNode.componentInstance?.shouldShow
+          || vNode.componentInstance?.decorator?.show;
         if (show) {
           visibleCount++;
         }

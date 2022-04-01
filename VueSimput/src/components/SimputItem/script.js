@@ -68,15 +68,15 @@ export default {
       // Update data to match given itemId
       this.update();
     },
-    ui() {
-      console.log(`~~~~ UI(${this.itemId})`);
-    },
-    noUi() {
-      console.log(`~~~~ noUI(${this.itemId})`);
-    },
-    available() {
-      console.log(`~~~~ available(${this.itemId})`);
-    },
+    // ui() {
+    //   console.log(`~~~~ UI(${this.itemId})`);
+    // },
+    // noUi() {
+    //   console.log(`~~~~ noUI(${this.itemId})`);
+    // },
+    // available() {
+    //   console.log(`~~~~ available(${this.itemId})`);
+    // },
   },
   computed: {
     type() {
@@ -103,6 +103,7 @@ export default {
         if (this.type) {
           this.ui = this.getSimput().getUI(this.type);
         }
+        this.simputChannel.pushQuery();
       } else {
         this.data = null;
         this.ui = null;
@@ -118,7 +119,7 @@ export default {
   inject: ['simputChannel', 'getSimput'],
   provide() {
     return {
-      simputChannel: this.simputChannel,
+      // simputChannel: this.simputChannel,
       dirty: (name) => this.dirty(name),
       dirtyMany: (...names) => this.dirtyMany(names),
       data: () => this.data,

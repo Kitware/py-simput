@@ -1,4 +1,4 @@
-import { TYPES, FALLBACK_CONVERT } from '../../types';
+import { COMPUTED } from '../../utils';
 
 function addLabels(values, allTextValues) {
   const result = [];
@@ -55,6 +55,11 @@ export default {
     },
   },
   created() {
+    this.onQuery = (query) => {
+      this.query = query;
+    };
+    this.simputChannel.$on('query', this.onQuery);
+
     this.onUpdateUI = () => {
       const newValue = `__${this.name}__${this.uiTS()}`;
       if (this.tsKey !== newValue) {
@@ -67,15 +72,24 @@ export default {
     this.onUpdateUI();
   },
   beforeDestroy() {
+    this.simputChannel.$off('query', this.onQuery);
     this.simputChannel.$off('templateTS', this.onUpdateUI);
   },
   data() {
     return {
       showHelp: false,
       tsKey: '__default__',
+      query: '',
     };
   },
   computed: {
+    ...COMPUTED.query,
+    ...COMPUTED.decorator,
+    ...COMPUTED.convert,
+    textToQuery() {
+      return `${this.name?.toLowerCase() || ''} ${this.label?.toLowerCase() || ''} ${
+        this.help?.toLowerCase() || ''} ${JSON.stringify(this.computedItems)}`;
+    },
     model: {
       get() {
         /* eslint-disable no-unused-expressions */
@@ -86,16 +100,8 @@ export default {
         this.properties()[this.name] = v;
       },
     },
-    decorator() {
-      /* eslint-disable no-unused-expressions */
-      this.mtime; // force refresh
-      return this.domains()[this.name]?.decorator?.available || { show: true, enable: true };
-    },
     multiple() {
       return Number(this.size) === -1;
-    },
-    convert() {
-      return TYPES[this.type]?.convert || FALLBACK_CONVERT;
     },
     computedItems() {
       if (this.items) {
