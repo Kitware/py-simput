@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/Kitware/py-simput/compare/v2.1.3...v2.2.0) (2022-04-01)
+
+
+### Features
+
+* **query:** Add filtering infrastructure ([6a266f3](https://github.com/Kitware/py-simput/commit/6a266f3b0a2089e670d981f8478572f0d866c667))
+
 ## [2.1.3](https://github.com/Kitware/py-simput/compare/v2.1.2...v2.1.3) (2022-03-30)
 
 
