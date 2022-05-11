@@ -1,3 +1,11 @@
+# [2.3.0](https://github.com/Kitware/py-simput/compare/v2.2.0...v2.3.0) (2022-05-11)
+
+
+### Features
+
+* **ui:** Enable all vuetify components ([262d398](https://github.com/Kitware/py-simput/commit/262d398bd53502777ce1f952b85b1368a578275c))
+* **ui:** Pass text attribute in process_node ([32edad8](https://github.com/Kitware/py-simput/commit/32edad8601dd2da42a3773e65b54fba7e3d5c1f5))
+
 # [2.2.0](https://github.com/Kitware/py-simput/compare/v2.1.3...v2.2.0) (2022-04-01)
 
 
