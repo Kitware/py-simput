@@ -1,35 +1,5 @@
 import xml.etree.ElementTree as ET
-
-VUETIFY_MAP = {
-    "ui": "div",
-    "row": "v-row",
-    "col": "v-col",
-    "spacer": "v-spacer",
-    "divider": "v-divider",
-    "show": "sw-show",
-    "hide": "sw-hide",
-    "text": "sw-text",
-}
-
-WIDGET_MAP = {
-    "input": "sw-text-field",
-    "textarea": "sw-text-area",
-}
-
-WIDGET_KNOWN = {
-    "div",
-    "v-row",
-    "v-col",
-    "v-spacer",
-    "v-divider",
-    "sw-show",
-    "sw-hide",
-    "sw-text",
-    "sw-text-field",
-    "sw-text-area",
-    "sw-slider",
-    "sw-group",
-}
+from .constants import VUETIFY_MAP, WIDGET_KNOWN, WIDGET_MAP
 
 
 class VuetifyResolver:
