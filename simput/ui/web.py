@@ -80,8 +80,9 @@ class VuetifyResolver:
         if not widget:
             return None
 
-        # Add name, label, help, size
+        # Add name, label, help, size and text
         out_elem = ET.Element(widget)
+        out_elem.text = in_elem.text
         out_elem.set(":mtime", "data.mtime")
 
         if key is not None and key in self._model:
