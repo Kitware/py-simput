@@ -1,5 +1,12 @@
 # PySimput
 
+---
+**DEPRECATED**
+
+py-simput is now replaced by [trame-simput](https://github.com/Kitware/trame-simput) for a simpler and nicer integration with trame v2.
+
+---
+
 Python package that let you create web forms using Trame/PyWebVue.
 The project include both a Python module along with a generated
 Vue based plugin for proxy editing using a fixed set of widgets.
